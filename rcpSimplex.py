@@ -12,10 +12,10 @@ class rcpSimplex2():
         self.vMat = vMat
         self.uMat = uMat
 
-        # # Vertex Flow Vectors
-        # self.alphaMat = np.zeros([self.n+1, self.n])
-        # for i in range(self.n):
-        #     self.alphaMat[i,:] = (self.sys.A @ (self.vMat[i,:]).T + self.sys.B @ (self.uMat[i,:]).T + self.sys.a).T
+        # Vertex Flow Vectors
+        self.alphaMat = np.zeros([self.n+1, self.n])
+        for i in range(self.n+1):
+            self.alphaMat[i,:] = np.reshape((self.sys.A @ np.reshape((self.vMat[i,:]), [2,1]) + self.sys.B @ np.reshape((self.uMat[i,:]), [2,1]) + self.sys.a), [1, 2])
 
         # Getting the affine feedback matrices
         augV = np.append(self.vMat, np.ones([self.n+1, 1]), axis=1)
@@ -23,12 +23,12 @@ class rcpSimplex2():
         self.K = np.zeros([self.m, self.n])
         self.g = np.zeros([self.m, 1])
         for i in range(self.m):
-            self.K[i] = kg[i][0:self.n].A1
+            self.K[i] = np.reshape(kg[i][0:self.n], [1, self.n])
             self.g[i] = kg[i][-1]
 
         # Half Space Represintation
-        v_list = [vRow.A1 for vRow in vMat]
-        self.A, self.b = pp.duality.compute_polytope_halfspaces(v_list)
+        self.v_list = [np.reshape(vRow, [1, self.n]) for vRow in vMat]
+        self.A, self.b = pp.duality.compute_polytope_halfspaces(self.v_list)
 
     def in_simplex(self, x):
         """x is np array"""
