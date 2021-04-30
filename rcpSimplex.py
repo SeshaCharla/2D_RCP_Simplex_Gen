@@ -1,5 +1,6 @@
 import numpy as np
 import pypoman as pp
+from numpy import reshape as rs
 
 
 class rcpSimplex2():
@@ -15,7 +16,7 @@ class rcpSimplex2():
         # Vertex Flow Vectors
         self.alphaMat = np.zeros([self.n+1, self.n])
         for i in range(self.n+1):
-            self.alphaMat[i,:] = np.reshape((self.sys.A @ np.reshape((self.vMat[i,:]), [2,1]) + self.sys.B @ np.reshape((self.uMat[i,:]), [2,1]) + self.sys.a), [1, 2])
+            self.alphaMat[i,:] = rs((self.sys.A @ rs((self.vMat[i,:]), [2,1]) + self.sys.B @ rs((self.uMat[i,:]), [2,1]) + self.sys.a), [1, 2])
 
         # Getting the affine feedback matrices
         augV = np.append(self.vMat, np.ones([self.n+1, 1]), axis=1)
@@ -23,16 +24,16 @@ class rcpSimplex2():
         self.K = np.zeros([self.m, self.n])
         self.g = np.zeros([self.m, 1])
         for i in range(self.m):
-            self.K[i] = np.reshape(kg[i][0:self.n], [1, self.n])
+            self.K[i] = rs(kg[i][0:self.n], [1, self.n])
             self.g[i] = kg[i][-1]
 
         # Half Space Represintation
-        self.v_list = [np.reshape(vRow, [1, self.n]) for vRow in vMat]
+        self.v_list = [rs(vRow, [1, self.n]) for vRow in vMat]
         self.A, self.b = pp.duality.compute_polytope_halfspaces(self.v_list)
 
     def in_simplex(self, x):
         """x is np array"""
-        y = np.reshape(x, [self.n, 1])
+        y = rs(x, [self.n, 1])
         z = (self.A @ y).T - self.b
         if z.all() <= 0:
             return True
@@ -41,11 +42,9 @@ class rcpSimplex2():
 
     def get_u(self, x):
         """ x in an array """
-        y = np.reshape(x, [self.n, 1])
+        y = rs(x, [self.n, 1])
         u = self.K @ y + self.g
         return u
-
-
 
 
 if __name__=="__main__":

@@ -3,13 +3,14 @@ Ref: https://ef.gy/linear-algebra:normal-vectors-in-higher-dimensional-spaces
 """
 
 import numpy as np
+from numpy import reshape as rs
 
 
 def normal_2(vec):
     """2 Normal of the vector"""
     N = np.matrix([[0, 1],
                    [-1, 0]])
-    x = np.reshape(vec, [2, 1])
+    x = rs(vec, [2, 1])
     h = N @ x
     n = h/np.linalg.norm(h)
     return n

@@ -1,6 +1,7 @@
 from pypoman import duality
 from rcpSimplex import rcpSimplex2
 import numpy as np
+from numpy import reshape as rs
 import cvxpy as cvx
 import pypoman as pp
 import normals as nr
@@ -9,12 +10,13 @@ import normals as nr
 
 def rcp_simgen(F, u0, sys, xi, Lmax):
     """Returns an RCP simplex with the proper control inputs (column vector) and velocity vectors"""
-    v0 = np.reshape(F[0, :], [2, 1])
-    v1 = np.reshape(F[1, :], [2, 1])
-    alpha = sys.A @ v0 + sys.B @ u0 + sys.a
-    print(alpha)
-    alpha0 = alpha/np.linalg.norm(alpha)
+    eps = 1e-5
     n, m =  np.shape(sys.B)
+    v0 = rs(F[0, :], [n, 1])
+    v1 = rs(F[1, :], [n, 1])
+    alpha = sys.A @ v0 + sys.B @ u0 + sys.a
+    alpha0 = alpha/np.linalg.norm(alpha)
+
 
     # Finding the required normals
     h2 = nr.normal_2(v0-v1)
@@ -33,27 +35,27 @@ def rcp_simgen(F, u0, sys, xi, Lmax):
     # Invariance Constraints on v1
     Av1Inv = (h2.T @ sys.B)
     bv1Inv = (h2.T @ sys.A @ v1) + (h2.T @ sys.a)
-    constraints += [Av1Inv @ u1 + bv1Inv <=0]
+    constraints += [Av1Inv @ u1 + bv1Inv <= -eps]
     # Flow condition on v1
     Av1Flo = xi.T @ sys.B
     bv1Flo = xi.T @ sys.A @ v1 + xi.T @ sys.a
-    constraints += [Av1Flo @ u1 + bv1Flo >= 0]
+    constraints += [Av1Flo @ u1 + bv1Flo >= eps]
     # Invariance Constraints on v2
     AlInv = (h1.T @ sys.A @ alpha0)
     Au2Inv = h1.T @ sys.B
     bv2Inv = h1.T @ sys.A @ v0 + h1.T @ sys.a
-    constraints += [AlInv * L + Au2Inv @ u2 + bv2Inv <= 0]
+    constraints += [AlInv @ L + Au2Inv @ u2 + bv2Inv <= -eps]
     # Flow Constraints on v2
     AlFlo = xi.T @ sys.A @ alpha0
     Au2Flo = xi.T @ sys.B
     bv2Flo = xi.T @ sys.A @ v0 + xi.T @ sys.a
-    constraints += [AlFlo * L + Au2Flo @ u2 + bv2Flo >= 0]
-    # Constraints on u
-    # umax = 6
-    # u_max = np.matrix([[6], [6]])
-    # M = np.kron( np . matrix ([[1] ,[ -1]]) , np . eye (m))
-    # p = np.ones([m, 1]) * umax
-    # #constraints += [M @ u2 <= p, M @ u3 <= p]
+    constraints += [AlFlo @ L + Au2Flo @ u2 + bv2Flo >= eps]
+    #Constraints on u
+    umax = 6
+    u_max = np.matrix([[6], [6]])
+    M = np.kron( np . matrix ([[1] ,[ -1]]) , np . eye (m))
+    p = np.ones([2*m, 1]) * umax
+    constraints += [M @ u2 <= p, M @ u2 <= p]
 
     # Objective function calculations:
     xi_n = nr.normal_2(xi)
@@ -65,7 +67,7 @@ def rcp_simgen(F, u0, sys, xi, Lmax):
     Au2Mflo = xi_n.T @ sys.B
     bv2Mflo = xi_n.T @ sys.A @ v0 + xi_n.T @ sys.a
     # Objective Function
-    obj =  cvx.norm(Lmax-L) + cvx.norm(Av1Mflo @ u1 + bv1Mflo) + cvx.norm(AlMflo * L + Au2Mflo @ u2 + bv2Mflo)
+    obj =  cvx.norm(Lmax-L) + cvx.norm(Av1Mflo @ u1 + bv1Mflo) + cvx.norm(AlMflo @ L + Au2Mflo @ u2 + bv2Mflo)
 
     # CVX problem
     prob = cvx.Problem(cvx.Minimize(obj), constraints)
@@ -100,8 +102,8 @@ if __name__=="__main__":
     xi = np.matrix([[1], [0]])
     Sim, opt = rcp_simgen(F, u0, sys.lsys, xi, Lmax)
     xi1 = np.matrix([[1], [0.5]])
-    F1 = np.matrix([Sim.vMat[2, :], Sim.vMat[1,:]])
-    u1 = np.reshape(Sim.uMat[2,:], [2, 1])
+    F1 = np.matrix([Sim.vMat[1, :], Sim.vMat[2,:]])
+    u1 = np.reshape(Sim.uMat[1,:], [2, 1])
     Sim1, opt1 = rcp_simgen(F1, u1, sys.lsys, xi1, Lmax)
     xi2 = np.matrix([[1], [-0.5]])
     F2 = np.matrix([Sim1.vMat[1, :], Sim1.vMat[2,:]])
@@ -111,7 +113,7 @@ if __name__=="__main__":
     pp.plot_polygon(pp.duality.compute_polytope_vertices(Sim.A, Sim.b))
     for i in range(3):
         plt.plot([Sim.vMat[i, 0], 0.2*(Sim.alphaMat[i, 0]/np.linalg.norm(Sim.alphaMat[i,:]))+Sim.vMat[i, 0]], [Sim.vMat[i, 1], 0.2*(Sim.alphaMat[i, 1]/np.linalg.norm(Sim.alphaMat[i,:]))+Sim.vMat[i, 1]])
-        #plt.plot([Sim.vMat[i, 0], 0.5*(xi[0, 0])+Sim.vMat[i, 0]], [Sim.vMat[i, 1], 0.5*(xi[1, 0])+Sim.vMat[i, 1]], "--k")
+        plt.plot([Sim.vMat[i, 0], 0.5*(xi[0, 0])+Sim.vMat[i, 0]], [Sim.vMat[i, 1], 0.5*(xi[1, 0])+Sim.vMat[i, 1]], "--k")
     pp.plot_polygon(pp.duality.compute_polytope_vertices(Sim1.A, Sim1.b))
     for i in range(3):
         plt.plot([Sim1.vMat[i, 0], 0.2*(Sim1.alphaMat[i, 0]/np.linalg.norm(Sim1.alphaMat[i,:]))+Sim1.vMat[i, 0]], [Sim1.vMat[i, 1], 0.2*(Sim1.alphaMat[i, 1]/np.linalg.norm(Sim1.alphaMat[i,:]))+Sim1.vMat[i, 1]])
@@ -121,24 +123,4 @@ if __name__=="__main__":
         plt.plot([Sim2.vMat[i, 0], 0.2*(Sim2.alphaMat[i, 0]/np.linalg.norm(Sim2.alphaMat[i,:]))+Sim2.vMat[i, 0]], [Sim2.vMat[i, 1], 0.2*(Sim2.alphaMat[i, 1]/np.linalg.norm(Sim2.alphaMat[i,:]))+Sim2.vMat[i, 1]])
         plt.plot([Sim2.vMat[i, 0], 0.5*(xi2[0, 0])+Sim2.vMat[i, 0]], [Sim2.vMat[i, 1], 0.5*(xi2[1, 0])+Sim2.vMat[i, 1]], "--r")
     ###############################################################################################
-    # from space import W, I
-    # F = I
-    # u0 = np.matrix([[1.2], [0]])
-    # Lmax = 1
-    # sims = []
-    # xis = []
-    # for i in range(4):
-    #     xi = np.reshape(W[i+1,:]- W[i,:], [2, 1])
-    #     xi = xi/np.linalg.norm(xi)
-    #     S, opt = rcp_simgen(F, u0, sys.lsys, xi, Lmax)
-    #     sims.append(S)
-    #     F = np.matrix([S.vMat[1, :], S.vMat[2,:]])
-    #     u0 = np.reshape(S.uMat[1,:], [2, 1])
-    #     xis.append(xi)
-    # plt.figure()
-    # for Sim in sims:
-    #     pp.plot_polygon(pp.duality.compute_polytope_vertices(Sim.A, Sim.b))
-    #     for i in range(3):
-    #         plt.plot([Sim.vMat[i, 0], 0.2*(Sim.alphaMat[i, 0]/np.linalg.norm(Sim.alphaMat[i,:]))+Sim.vMat[i, 0]], [Sim.vMat[i, 1], 0.2*(Sim.alphaMat[i, 1]/np.linalg.norm(Sim.alphaMat[i,:]))+Sim.vMat[i, 1]])
-    #         plt.plot([Sim.vMat[i, 0], 0.5*(xis[i][0, 0])+Sim.vMat[i, 0]], [Sim.vMat[i, 1], 0.5*(xis[i][1, 0])+Sim.vMat[i, 1]], "--k")
     plt.show()
