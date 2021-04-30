@@ -46,6 +46,12 @@ class rcpSimplex2():
         u = self.K @ y + self.g
         return u
 
+    def set_inoutPoints(self, s_in, s_out, xi):
+        """Records the input and output points"""
+        self.s_in = s_in
+        self.s_out = s_out
+        self.xi = xi
+
 
 if __name__=="__main__":
     import system

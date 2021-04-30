@@ -10,7 +10,7 @@ import normals as nr
 
 def rcp_simgen(F, u0, sys, xi, Lmax):
     """Returns an RCP simplex with the proper control inputs (column vector) and velocity vectors"""
-    eps = 1e-5
+    eps = 1e-2
     n, m =  np.shape(sys.B)
     v0 = rs(F[0, :], [n, 1])
     v1 = rs(F[1, :], [n, 1])
@@ -18,7 +18,7 @@ def rcp_simgen(F, u0, sys, xi, Lmax):
     alpha0 = alpha/np.linalg.norm(alpha)
 
 
-    # Finding the required normals
+    # Finding the required normals (unit vectors)
     h2 = nr.normal_2(v0-v1)
     if (h2.T @ alpha0)[0,0] > 0:
         h2 = -h2
@@ -51,11 +51,11 @@ def rcp_simgen(F, u0, sys, xi, Lmax):
     bv2Flo = xi.T @ sys.A @ v0 + xi.T @ sys.a
     constraints += [AlFlo @ L + Au2Flo @ u2 + bv2Flo >= eps]
     #Constraints on u
-    umax = 6
+    umax = 12
     u_max = np.matrix([[6], [6]])
     M = np.kron( np . matrix ([[1] ,[ -1]]) , np . eye (m))
     p = np.ones([2*m, 1]) * umax
-    constraints += [M @ u2 <= p, M @ u2 <= p]
+    constraints += [M @ u1 <= p, M @ u2 <= p]
 
     # Objective function calculations:
     xi_n = nr.normal_2(xi)
