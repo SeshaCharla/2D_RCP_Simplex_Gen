@@ -29,17 +29,17 @@ plt.yticks(np.arange(-6, 7))
 plt.grid()
 
 j = 0
-while (spc.which_seg(s_in) != (np.shape(spc.W))[0] -1) and j<6:
+while (spc.which_seg(s_in) != (np.shape(spc.W))[0] -1) and j<9:
     Sim = cf.prop_chain(F, uMat, ss.lsys, s_in, del_s)
     F = Sim.vMat[1:,:]
     uMat = Sim.uMat[1:,:]
-    s_in = Sim.s_out
+    s_in = svc.calc_sin(F)
     chain.append(Sim)
     pp.plot_polygon(pp.duality.compute_polytope_vertices(Sim.A, Sim.b))
     j = j + 1
     print(j)
 for i in range(3):
     plt.plot([Sim.vMat[i, 0], 0.2*(Sim.alphaMat[i, 0]/np.linalg.norm(Sim.alphaMat[i,:]))+Sim.vMat[i, 0]], [Sim.vMat[i, 1], 0.2*(Sim.alphaMat[i, 1]/np.linalg.norm(Sim.alphaMat[i,:]))+Sim.vMat[i, 1]])
-    plt.plot([Sim.vMat[i, 0], 0.5*(xi[0, 0])+Sim.vMat[i, 0]], [Sim.vMat[i, 1], 0.5*(xi[1, 0])+Sim.vMat[i, 1]], "--k")
+    plt.plot([Sim.vMat[i, 0], 0.5*(Sim.xi[0, 0])+Sim.vMat[i, 0]], [Sim.vMat[i, 1], 0.5*(Sim.xi[1, 0])+Sim.vMat[i, 1]], "--k")
 
 plt.show()

@@ -74,11 +74,11 @@ def prop_chain(F, uMat, sys, s_in, del_s):
     alpha1 = sys.A @ rs(F1[0,:], [2, 1])  + sys.B @ u1 + sys.a
     L1max = lmax.lambda_max(rs(F1[0, :], [2, 1]), alpha1, s_in, s_o)
     S1, r1 = simgen.rcp_simgen(F1, u1, sys, xi, L1max)
-    if r1 <= r0:
-        Simplex = S1
-    else:
+    if r0 <= r1:
         Simplex = S0
-    Simplex.set_inoutPoints(s_in, s_o, xi)
+    else:
+        Simplex = S1
+    Simplex.set_xi(xi)
     return Simplex
 
 

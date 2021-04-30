@@ -10,7 +10,7 @@ import normals as nr
 
 def rcp_simgen(F, u0, sys, xi, Lmax):
     """Returns an RCP simplex with the proper control inputs (column vector) and velocity vectors"""
-    eps = 1e-2
+    eps = 1e-1
     n, m =  np.shape(sys.B)
     v0 = rs(F[0, :], [n, 1])
     v1 = rs(F[1, :], [n, 1])

@@ -1,6 +1,7 @@
 import numpy as np
 import pypoman as pp
 from numpy import reshape as rs
+import space as spc
 
 
 class rcpSimplex2():
@@ -46,10 +47,9 @@ class rcpSimplex2():
         u = self.K @ y + self.g
         return u
 
-    def set_inoutPoints(self, s_in, s_out, xi):
-        """Records the input and output points"""
-        self.s_in = s_in
-        self.s_out = s_out
+
+    def set_xi(self, xi):
+        """Records the flow vector"""
         self.xi = xi
 
 
