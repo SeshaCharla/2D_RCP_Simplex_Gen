@@ -26,6 +26,7 @@ def chain_sup(s_in, del_s):
     return s_o, xi
 
 
+
 if __name__=="__main__":
     s0, xi = chain_sup(np.matrix([[1], [-1]]), 0.1)
     print(s0)
