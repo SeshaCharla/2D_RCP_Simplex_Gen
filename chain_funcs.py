@@ -11,7 +11,7 @@ import support_vecs as svc
 
 def init_chain(F, xi, sys):
     """ Assign control inputs to the vertices of the initial simplex"""
-    eps = 1e-5
+    eps = 1e-4
     n, m =  np.shape(sys.B)
     v0 = rs(F[0, :], [n, 1])
     v1 = rs(F[1, :], [n, 1])

@@ -70,7 +70,7 @@ def lambda_max(v0, alpha0, s_in, s_out):
     ld_oh = lambda_hit(v0, alpha0, spc.hobs)
     ld_ints = lambda_ints(v0, alpha0)
     ld_intc = lambda_intc(v0, alpha0, s_in, s_out)
-    ld_max = min([0.75*ld_p, 0.75*ld_oh, 0.75*ld_ov, ld_intc, 0.5*ld_ints])
+    ld_max = min([0.5*ld_p, 0.75*ld_oh, 0.75*ld_ov, ld_intc, 0.5*ld_ints])
     return ld_max
 
 

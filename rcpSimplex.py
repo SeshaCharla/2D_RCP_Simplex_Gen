@@ -29,8 +29,7 @@ class rcpSimplex2():
             self.g[i] = kg[i][-1]
 
         # Half Space Represintation
-        self.v_list = [rs(vRow, [1, self.n]) for vRow in vMat]
-        self.A, self.b = pp.duality.compute_polytope_halfspaces(self.v_list)
+        self.A, self.b = pp.duality.compute_polytope_halfspaces(self.vMat)
 
     def in_simplex(self, x):
         """x is np array"""

@@ -12,7 +12,7 @@ import pypoman as pp
 chain = []
 F = spc.I
 s_in = calc_sin(F)
-del_s = 0.25
+del_s = 2.8
 s_o, xi = svc.chain_sup(s_in, del_s)
 uMat = cf.init_chain(F, xi, ss.lsys)
 
@@ -29,13 +29,13 @@ plt.yticks(np.arange(-6, 7))
 plt.grid()
 
 j = 0
-while (spc.which_seg(s_in) != (np.shape(spc.W))[0] -1) and j<9:
+while (spc.which_seg(s_in) != (np.shape(spc.W))[0] -1) and j<309:
     Sim = cf.prop_chain(F, uMat, ss.lsys, s_in, del_s)
     F = Sim.vMat[1:,:]
     uMat = Sim.uMat[1:,:]
     s_in = svc.calc_sin(F)
     chain.append(Sim)
-    pp.plot_polygon(pp.duality.compute_polytope_vertices(Sim.A, Sim.b))
+    pp.plot_polygon(Sim.vMat)
     j = j + 1
     print(j)
 for i in range(3):
