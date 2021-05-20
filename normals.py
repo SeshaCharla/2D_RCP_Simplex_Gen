@@ -4,7 +4,6 @@ Ref: https://ef.gy/linear-algebra:normal-vectors-in-higher-dimensional-spaces
 
 import numpy as np
 from numpy import reshape as rs
-from numpy.linalg import norm
 
 
 def normal(vecMat, n):
@@ -44,7 +43,7 @@ def normal_n(vecMat, n):
         raise(ValueError("Not enough vectors!!"))
     nMat_half = vecMat.T   # columns are the vectors
     nMat = np.append(nMat_half, nMat_half, axis=0)
-    baseVecs = np.zeros([4, 4])
+    baseVecs = np.zeros([n, n])
     for i in range(n):
         baseVecs[i, i] = 1
     nVec = np.zeros([n, 1])
@@ -55,4 +54,4 @@ def normal_n(vecMat, n):
 
 
 if __name__=="__main__":
-    print(normal(np.matrix([[1, 0, 0, 0], [0, 1, 0, 0], [0, 0, 1, 0]]), 4))
+    print(normal(np.matrix([[1, 0, 0], [0, 1, 0]]), 3))
