@@ -1,8 +1,7 @@
 from os import umask
 import numpy as np
-from numpy.linalg import LinAlgError
 import pypoman as pp
-from numpy import delete, reshape as rs
+from numpy import reshape as rs
 import space as spc
 import cvxpy as cvx
 import normals as nr
@@ -10,24 +9,28 @@ import normals as nr
 
 class rcpSimplex2():
     """RCP simplex Class for 2D"""
-    def __init__(self, n, asys, vMat, uMat, phi):
+    def __init__(self, n, asys, vMat, uMat, phi, xi_gen):
         """n - Dimension; asys - affine linear system;
            vMat - Vertex Matrix; uMat - Control input matrix,
            phi - support way-point set"""
         # Given
         self.n = n
-        self.m = np.shape(uMat)[1]    # Input size
         self.asys = asys
+        self.m = np.shape(self.asys.B)[1]    # Input size
         self.vMat = vMat
         self.uMat = uMat
         self.phi = phi
+        self.xi_gen = xi_gen
         # Sanity Checks
-        if (n+1) != np.shape(vMat)[1] or np.shape(vMat)[1] != np.shape(uMat)[1] or n != np.shape(vMat)[0]:
+        if (n+1) != np.shape(self.vMat)[1] or np.shape(self.vMat)[1] != np.shape(self.uMat)[1] or n != np.shape(self.vMat)[0] or \
+            self.m != np.shape(self.uMat)[1]:
             raise(ValueError("The dimensions don't match!"))
         # Half Space Represintation
         self.A, self.b = pp.duality.compute_polytope_halfspaces(np.array(self.vMat))
-        self.calc_exit_flow()
-        self.optimize_inputs()
+        self.calc_vertex_flows()
+        if (0 < 1- np.abs(self.xi_gen.T @ self.xi) < 1e-3) :
+            self.calc_exit_flow()
+            self.optimize_inputs()
         self.calc_affine_feedback()
         self.calc_vertex_flows()
 
@@ -45,7 +48,7 @@ class rcpSimplex2():
             b[-2, ] = 1
             try:
                 Ld = np.linalg.solve(A, b)
-            except LinAlgError:
+            except np.linalg.LinAlgError:
                 continue
             if all(Ld) >= 0:
                 break
@@ -64,6 +67,19 @@ class rcpSimplex2():
 
     def optimize_inputs(self):
         """Runs a new optimization problem to update inputs"""
+        eps = 1e-3
+        vr = rs(self.vMat[0,:], [self.n, 1])
+        alpha_0 = rs(self.alphaMat[0, :], [self.n, 1])
+        self.calc_ourward_normals()
+
+
+
+
+
+
+    def calc_ourward_normals(self):
+        """ Calculates the matrix of outward normals of all the facets"""
+
 
 
     def calc_affine_feedback(self):
@@ -80,7 +96,9 @@ class rcpSimplex2():
         """ Vertex Flow Vectors """
         self.alphaMat = np.zeros([self.n+1, self.n])
         for i in range(self.n+1):
-            self.alphaMat[i,:] = rs((self.sys.A @ rs((self.vMat[i,:]), [2,1]) + self.sys.B @ rs((self.uMat[i,:]), [2,1]) + self.sys.a), [1, 2])
+            alpha_i = (self.sys.A @ rs((self.vMat[i,:]), [2,1]) + self.sys.B @ rs((self.uMat[i,:]), [2,1]) + self.sys.a)
+            alpha_n = alpha_i/np.linalg.norm(alpha_i)
+            self.alphaMat[i,:] = rs(alpha_n, [1, 2])
 
     def in_simplex(self, x):
         """x is np array"""

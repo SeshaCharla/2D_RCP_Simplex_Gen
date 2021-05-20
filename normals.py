@@ -4,6 +4,23 @@ Ref: https://ef.gy/linear-algebra:normal-vectors-in-higher-dimensional-spaces
 
 import numpy as np
 from numpy import reshape as rs
+from numpy.linalg import norm
+
+
+def normal(vecMat, n):
+    """function that calculates the normal in given dimension
+    -- Normal vector of the given list of vectors Rows of the vecMat are vectors
+    -- Normal
+    """
+    p, q = np.shape(vecMat)
+    if n-1 != p or n != q :
+        raise(ValueError("The dimensions don't match!"))
+    if n<2:
+        raise(ValueError("You can't find the normal for less than 2 dimensions!!"))
+    elif n==2:
+        return normal_2(vecMat)
+    else:
+        return normal_n(vecMat, n)
 
 
 def normal_2(vec):
@@ -16,22 +33,26 @@ def normal_2(vec):
     return n
 
 
-# def normal_n(vecMat):
-#     """ Normal vector of the given list of vectors
-#         Rows of the vecMat are vectors
-#     """
-#     m, n = np.shape(vecMat)    # m = number of vectors, n = dimension
-#     if m != n-1:
-#         raise(ValueError("Not enough vectors"))
-#     d = vecMat.T   # columns are the vectors
-#     n = np.zeros(n)
-#     j = np.append(np.arange(0, n), np.arange(n-2, -1, -1))
-#     M = np.zeros([n-1, n-1])    # Minor matrix
-#     for i in range(n):
-#         for p in range(n-1):
-#             for q in range(n-1):
-#                 M[p, q] = d[j[i+p], j[q]
+def normal_n(vecMat, n):
+    """ Normal vector of the given list of vectors
+        Rows of the vecMat are vectors
+    """
+    m, p = np.shape(vecMat)    # m = number of vectors, n = dimension
+    if n != p:
+        raise(ValueError("Given dimensions don't match!"))
+    if m != n-1:
+        raise(ValueError("Not enough vectors!!"))
+    nMat_half = vecMat.T   # columns are the vectors
+    nMat = np.append(nMat_half, nMat_half, axis=0)
+    baseVecs = np.zeros([4, 4])
+    for i in range(n):
+        baseVecs[i, i] = 1
+    nVec = np.zeros([n, 1])
+    for i in range(n):
+        nVec += (-1)**i * rs(baseVecs[:, i], [n, 1]) * np.linalg.det(nMat[i+1:i+n, :])
+    h = nVec/np.linalg.norm(nVec)
+    return h
 
 
 if __name__=="__main__":
-    print(normal_2(np.array([0, 1])))
+    print(normal(np.matrix([[1, 0, 0, 0], [0, 1, 0, 0], [0, 0, 1, 0]]), 4))
