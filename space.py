@@ -61,7 +61,8 @@ def which_seg(s):
     """ Finds the end points of the segments and returns the row index of the starting segment:
     s_k, s_kp1, k
     """
-    m, n = np.shape(W)
+    n = 2
+    m, _ = np.shape(W)
     s = rs(s, [2, 1])
     for i in range(m-1):
         s_k = rs(W[i, :], [n, 1])

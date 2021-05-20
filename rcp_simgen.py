@@ -8,7 +8,7 @@ import normals as nr
 
 
 
-def rcp_simgen(F, u0, sys, xi, Lmax):
+def rcp_simgen(F, u0, sys, xi, Lmax, phi):
     """Returns an RCP simplex with the proper control inputs (column vector) and velocity vectors"""
     eps = 1e-3
     n, m =  np.shape(sys.B)
@@ -86,7 +86,7 @@ def rcp_simgen(F, u0, sys, xi, Lmax):
     vMat[1, :] = np.reshape(v1, [1, n])
     vMat[2, :] = np.reshape(v2, [1, n])
 
-    S = rcpSimplex2(vMat, uMat, sys)
+    S = rcpSimplex2(vMat, uMat, sys, phi)
     return S, result
 
 

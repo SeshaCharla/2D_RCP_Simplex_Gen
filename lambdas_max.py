@@ -28,7 +28,8 @@ def lambda_hit(v0, alpha0, polytope):
 
 def lambda_ints(v0, alpha0):
     """Intersection with support curve"""
-    m, n = np.shape(spc.W)
+    n = 2
+    m, *_ = np.shape(spc.W)
     ld = []
     for i in range(m-1):
         sk = rs(spc.W[i,:], [n, 1])
@@ -48,7 +49,8 @@ def lambda_ints(v0, alpha0):
 
 def lambda_intc(v0, alpha0, s_in, s_out):
     """Intersection with support curve"""
-    m, n = np.shape(spc.W)
+    n = 2
+    m, *_ = np.shape(spc.W)
     ld = []
     try:
         A = np.column_stack([alpha0, -(s_out-s_in)])

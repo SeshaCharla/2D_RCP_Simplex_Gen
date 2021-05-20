@@ -12,7 +12,8 @@ import support_vecs as svc
 def init_chain(F, xi, sys):
     """ Assign control inputs to the vertices of the initial simplex"""
     eps = 1e-4
-    n, m =  np.shape(sys.B)
+    n = 2
+    *_, m =  np.shape(sys.B)
     v0 = rs(F[0, :], [n, 1])
     v1 = rs(F[1, :], [n, 1])
 
@@ -61,18 +62,19 @@ def init_chain(F, xi, sys):
 
 def prop_chain(F, uMat, sys, s_in, del_s):
     """ Propagates the simplex chain"""
+    n = 2
     s_o, xi = svc.chain_sup(s_in, del_s)
     # First one
     F0 = F
-    u0 = rs(uMat[0, :], [2, 1])
-    alpha0 = sys.A @ rs(F0[0,:], [2, 1])  + sys.B @ u0 + sys.a
-    L0max = lmax.lambda_max(rs(F0[0, :], [2, 1]), alpha0, s_in, s_o)
+    u0 = rs(uMat[0, :], [n, 1])
+    alpha0 = sys.A @ rs(F0[0,:], [n, 1])  + sys.B @ u0 + sys.a
+    L0max = lmax.lambda_max(rs(F0[0, :], [n, 1]), alpha0, s_in, s_o)
     S0, r0 = simgen.rcp_simgen(F0, u0, sys, xi, L0max)
     # Second one
     F1 = np.flip(F, 0)
-    u1 = rs(uMat[1, :], [2, 1])
-    alpha1 = sys.A @ rs(F1[0,:], [2, 1])  + sys.B @ u1 + sys.a
-    L1max = lmax.lambda_max(rs(F1[0, :], [2, 1]), alpha1, s_in, s_o)
+    u1 = rs(uMat[1, :], [n, 1])
+    alpha1 = sys.A @ rs(F1[0,:], [n, 1])  + sys.B @ u1 + sys.a
+    L1max = lmax.lambda_max(rs(F1[0, :], [n, 1]), alpha1, s_in, s_o)
     S1, r1 = simgen.rcp_simgen(F1, u1, sys, xi, L1max)
     if r0 <= r1:
         Simplex = S0
