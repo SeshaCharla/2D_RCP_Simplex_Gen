@@ -24,14 +24,14 @@ class rcpSimplex2():
         self.xi_gen = xi_gen
         self.u_lims = u_lims    # u_lims=[u1_max, u2_max, ..., -u1_min, -u2_min, ...]
         # Sanity Checks
-        if (n+1) != np.shape(self.vMat)[1] or np.shape(self.vMat)[1] != np.shape(self.uMat)[1] or n != np.shape(self.vMat)[0] or \
+        if (n+1) != np.shape(self.vMat)[0] or np.shape(self.vMat)[0] != np.shape(self.uMat)[0] or n != np.shape(self.vMat)[1] or \
             self.m != np.shape(self.uMat)[1]:
             raise(ValueError("The dimensions don't match!"))
         # Half Space Represintation
         self.A, self.b = pp.duality.compute_polytope_halfspaces(np.array(self.vMat))
         self.calc_vertex_flows()
+        self.calc_exit_flow()
         if (0 < 1- np.abs(self.xi_gen.T @ self.xi) < 1e-3) :
-            self.calc_exit_flow()
             self.optimize_inputs()
         self.calc_affine_feedback()
         self.calc_vertex_flows()
@@ -43,7 +43,7 @@ class rcpSimplex2():
         Ld = np.empty([self.n+2, 1])
         for i in range(p-1):
             # Constructing A and b matrices
-            M = np.append(Fo, np.matrix([[-1*self.phi[i,:]],[-1*self.phi[i+1, :]]]), axis=0)
+            M = np.append(Fo, -1*self.phi[i:i+2,:], axis=0)
             A = M.T
             b = np.zeros([np.shape(A)[0], 1])
             b[-1, 0] = 1
@@ -60,7 +60,7 @@ class rcpSimplex2():
             self.seg = self.phi[i:i+2, :]
         delt = Ld[-2:, 0]
         self.so = (delt.T @ self.seg).T
-        if (delt[2, 0] >= 0.2):
+        if (delt[1] >= 0.2):
             xi_vec = (self.phi[i+1, :] - self.phi[i, :]).T
             self.xi = xi_vec / (np.linalg.norm(xi_vec))
         else:
@@ -133,15 +133,15 @@ class rcpSimplex2():
         """ Vertex Flow Vectors """
         self.alphaMat = np.zeros([self.n+1, self.n])
         for i in range(self.n+1):
-            alpha_i = (self.sys.A @ rs((self.vMat[i,:]), [2,1]) + self.sys.B @ rs((self.uMat[i,:]), [2,1]) + self.sys.a)
+            alpha_i = (self.asys.A @ rs((self.vMat[i,:]), [self.n,1]) + self.asys.B @ rs((self.uMat[i,:]), [self.n,1]) + self.asys.a)
             alpha_n = alpha_i/np.linalg.norm(alpha_i)
-            self.alphaMat[i,:] = rs(alpha_n, [1, 2])
+            self.alphaMat[i,:] = rs(alpha_n, [1, self.n])
 
     def in_simplex(self, x):
         """x is np array"""
         y = rs(x, [self.n, 1])
         z = (self.A @ y).T - self.b
-        if z.all() <= 0:
+        if np.all(z <= 0):
             return True
         else:
             return False
@@ -153,11 +153,20 @@ class rcpSimplex2():
         return u
 
 
-
 if __name__=="__main__":
     import system
-    vMat = np.matrix([[0, 0], [1, 0], [0, 1]])
-    uMat = np.matrix([[1, 1], [2, 1], [3, 1]])
-    rsp = rcpSimplex2(vMat, uMat, system.lsys, spc.W)
-    print(rsp.in_simplex([0.5, 0.5]))
-    print(rsp.get_u([0.5,0.5]))
+    A = np.eye(3)
+    B = np.eye(3)
+    a = np.zeros([3, 1])
+    lsys = system.asys(A, B, a)
+    vMat = np.matrix([[0, 0, 0], [1, 0, 0], [0, 1, 0], [0, 0, 1]])
+    uMat = np.matrix([[1, 1, 1], [2, 1, 1], [3, 1, 1], [1, 1, 1]])
+    xi = np.matrix([[0], [1], [1]])
+    umax = 12
+    u_max = np.matrix([[6], [6], [6]])
+    M = np.kron( np . matrix ([[1] ,[ -1]]) , np . eye (3))
+    u_lims = np.ones([2*3, 1]) * umax
+    W = np.matrix([[0, 0, 0], [1, 1, 1], [2, 2, 2], [3, 3, 3]])
+    rsp = rcpSimplex2(3, lsys, vMat, uMat, W, xi, u_lims)
+    print(rsp.in_simplex([0.25, 0.25, 0.25]))
+    print(rsp.get_u([0.25,0.25, 0.25]))
