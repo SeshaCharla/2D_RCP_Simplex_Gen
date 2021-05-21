@@ -5,11 +5,12 @@ from numpy import reshape as rs
 import space as spc
 import cvxpy as cvx
 import normals as nr
+from itertools import combinations
 
 
 class rcpSimplex2():
     """RCP simplex Class for 2D"""
-    def __init__(self, n, asys, vMat, uMat, phi, xi_gen):
+    def __init__(self, n, asys, vMat, uMat, phi, xi_gen, u_lims):
         """n - Dimension; asys - affine linear system;
            vMat - Vertex Matrix; uMat - Control input matrix,
            phi - support way-point set"""
@@ -21,6 +22,7 @@ class rcpSimplex2():
         self.uMat = uMat
         self.phi = phi
         self.xi_gen = xi_gen
+        self.u_lims = u_lims    # u_lims=[u1_max, u2_max, ..., -u1_min, -u2_min, ...]
         # Sanity Checks
         if (n+1) != np.shape(self.vMat)[1] or np.shape(self.vMat)[1] != np.shape(self.uMat)[1] or n != np.shape(self.vMat)[0] or \
             self.m != np.shape(self.uMat)[1]:
@@ -68,19 +70,54 @@ class rcpSimplex2():
     def optimize_inputs(self):
         """Runs a new optimization problem to update inputs"""
         eps = 1e-3
+        M = np.kron(np.matrix([[1] ,[ -1]]) , np.eye(self.m))
         vr = rs(self.vMat[0,:], [self.n, 1])
         alpha_0 = rs(self.alphaMat[0, :], [self.n, 1])
         self.calc_ourward_normals()
-
-
-
-
-
+        # Optimization problem
+        u = [cvx.Variable([self.m, 1]) for i in range(1, self.n)]
+        constraints = []
+        obj = 0
+        for i in range(1, self.n):
+            obj += self.xi.T @ (self.asys.A @ rs(self.vMat[i, :], [self.n, 1]) + self.asys.B @ u[i-1] + self.asys.a)
+            # Flow constraints
+            constraints += [self.xi.T @ (self.asys.A @ rs(self.vMat[i, :], [self.n, 1]) + self.asys.B @ u[i-1] + self.asys.a) >= eps]
+            # Invariance Constraints
+            I = list(np.arange(1, self.n))    # Index Set
+            _ = I.pop(i)                      # Index Set
+            for j in I:
+                hj = rs(self.h[j, :], [self.n, 1])
+                constraints += [hj.T @ (self.asys.A @ rs(self.vMat[i, :], [self.n, 1]) + self.asys.B @ u[i-1] + self.asys.a) <= -eps]
+            # input constraints
+            constraints += [M @ u[i-1] <= self.u_lims]
+        prob = cvx.Problem(cvx.Maximize(obj), constraints=constraints)
+        if not prob.is_dcp():
+            raise(ValueError("The problem doesn't follow DCP rules!!"))
+        prob.solve()
+        for i in range(1, self.n):
+            self.uMat[i, :] = rs(u[i-1].value, [1, self.m])
 
     def calc_ourward_normals(self):
         """ Calculates the matrix of outward normals of all the facets"""
-
-
+        self.F = []    # Facets
+        self.h = np.zeros([self.n+1, self.n])
+        f = np.arange(0, self.n+1)
+        for i in range(self.n+1):
+            I = list(np.arange(0, self.n))
+            j = I.pop(i)    # Facet index set
+            fMat = np.zeros([self.n, self.n]) # Facet vertex Matrix
+            for i in range(self.n):
+                fMat[i, :] = self.vMat[I[i], :]
+            self.F.append(fMat)
+            vecMat = np.zeros([self.n-1, self.n])
+            for i in range(self.n-1):
+                vecMat[i, :] = fMat[i+1, :] - fMat[0, :]
+            h_n = nr.normal(vecMat, self.n)
+            edge = rs(self.vMat[j,:] - fMat[0,:], [self.n, 1])
+            edge_n = edge/np.linalg.norm(edge)
+            if (h_n.T @ edge_n) < 0 :
+                h_n = -h_n
+            self.h[i, :] = rs(h_n, [1, self.n])
 
     def calc_affine_feedback(self):
         """Getting the affine feedback matrices"""
