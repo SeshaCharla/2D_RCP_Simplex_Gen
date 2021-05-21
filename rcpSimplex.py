@@ -1,4 +1,3 @@
-from os import umask
 import numpy as np
 import pypoman as pp
 from numpy import reshape as rs
@@ -155,6 +154,7 @@ class rcpSimplex2():
 
 if __name__=="__main__":
     import system
+    # Showing for 3D case
     A = np.eye(3)
     B = np.eye(3)
     a = np.zeros([3, 1])
