@@ -22,6 +22,7 @@ def rcp_simgen(n, F, u0, alpha0, asys, xi, Lmax, ulims, phi):
     # Finding the outward normals
     v_n = F[0, :] + Lmax*rs(alpha0, [1, n])
     vMat_ = np.append(F, v_n, axis=0)
+    print(vMat_)
     dummy_sim = rsp.Simplex(n, vMat_)
     h = dummy_sim.h
 
@@ -30,6 +31,7 @@ def rcp_simgen(n, F, u0, alpha0, asys, xi, Lmax, ulims, phi):
 
     # Optimization problem
     u = [cvx.Variable([m, 1]) for i in range(1, n+1)]
+    print(len(u))
     L = cvx.Variable(1)
     constraints = []
     obj = 0
@@ -47,23 +49,24 @@ def rcp_simgen(n, F, u0, alpha0, asys, xi, Lmax, ulims, phi):
             # input constraints
             constraints += [M @ u[i-1] <= u_lims]
     # For nth new vertex
-    obj += xi.T @ (asys.A @ (rs(F[0, :], [n, 1]) + L * alpha0) + asys.B @ u[n] + asys.a)
+    obj += xi.T @ (asys.A @ (rs(F[0, :], [n, 1]) + L * alpha0) + asys.B @ u[n-1] + asys.a)
     # Flow constraints
-    constraints += [xi.T @ (asys.A @ (rs(F[0, :], [n, 1]) + L * alpha0) + asys.B @ u[n] + asys.a) >= eps]
+    constraints += [xi.T @ (asys.A @ (rs(F[0, :], [n, 1]) + L * alpha0) + asys.B @ u[n-1] + asys.a) >= eps]
     # Invariance Constraints
     I = list(np.arange(1, n+1))    # Index Set
-    _ = I.pop(n)                      # Index Set
+    _ = I.pop(n-1)                      # Index Set
     for j in I:
         hj = rs(h[j, :], [n, 1])
         constraints += [hj.T @ (asys.A @ (rs(F[0, :], [n, 1]) + L * alpha0) + asys.B @ u[i-1] + asys.a) <= -eps]
     # input constraints
-    constraints += [M @ u[n] <= u_lims]
+    constraints += [M @ u[n-1] <= u_lims]
     # Setting up the problem
     prob = cvx.Problem(cvx.Maximize(obj), constraints=constraints)
     if not prob.is_dcp():
         raise(ValueError("The problem doesn't follow DCP rules!!"))
     prob.solve()
     # u matrix
+    print(u[0].value)
     uMat = np.zeros([n+1, m])
     uMat[0, :] = np.reshape(u0, [1, m])
     for i in range(1, n+1):
@@ -89,7 +92,7 @@ if __name__=="__main__":
     alpha0 = sys.lsys.A @ rs(F[0, :],[2, 1]) + sys.lsys.B @ u0 + sys.lsys.a
     Lmax = 1
     umax = 12
-    u_lims = np.ones([2*3, 1]) * umax
+    u_lims = np.ones([2*2, 1]) * umax
     xi = np.matrix([[1], [0]])
     Sim = rcp_simgen(2, F, u0, alpha0, sys.lsys, xi, Lmax, u_lims, spc.W)
     # xi1 = np.matrix([[1], [0.5]])

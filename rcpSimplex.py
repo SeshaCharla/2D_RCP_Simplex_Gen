@@ -44,15 +44,6 @@ class Simplex():
                 h_n = -h_n
             self.h[i, :] = rs(h_n, [1, self.n])
 
-    # def in_simplex(self, x):
-    #     """x is np array"""
-    #     y = rs(x, [self.n, 1])
-    #     z = (self.A @ y).T - self.b
-    #     if np.all(z <= 0):
-    #         return True
-    #     else:
-    #         return False
-
 
 class rcpSimplex():
     """RCP simplex Class for n-D"""
@@ -77,8 +68,8 @@ class rcpSimplex():
         self.A, self.b = pp.duality.compute_polytope_halfspaces(np.array(self.vMat))
         self.calc_vertex_flows()
         self.calc_exit_flow()
-        if (0 < 1- np.abs(self.xi_gen.T @ self.xi) < 1e-3) :
-            self.optimize_inputs()
+        #if (0 < 1- np.abs(self.xi_gen.T @ self.xi) < 1e-3) :
+        self.optimize_inputs()
         self.calc_affine_feedback()
         self.calc_vertex_flows()
         self.set_quality()
@@ -86,34 +77,36 @@ class rcpSimplex():
     def calc_exit_flow(self):
         """Calculate the exit facet intersection and the flow vector"""
         Fo = self.vMat[1:, :]    # Matrix containing the exit facet vertices
-        p, *_ = np.shape(self.phi)
-        Ld = np.empty([self.n+2, 1])
+        p, *_ = np.shape(self.phi)  # Total number of segments
+        ld = np.nan * np.ones([self.n+2, 1])   # \lambda1, ..., -\delta1, -\delta2,...
         for i in range(p-1):
             # Constructing A and b matrices
-            M = np.append(Fo, -1*self.phi[i:i+2,:], axis=0)
+            M_vert = np.append(Fo, -1*self.phi[i:i+2,:], axis=0)
+            l_sum = np.append(np.ones([self.n, 1]), np.zeros([2, 1]), axis = 0)
+            d_sum = np.append(np.zeros([self.n, 1]), np.ones([2, 1]), axis = 0)
+            M = np.append(M_vert, np.append(l_sum, d_sum, axis = 1), axis=1)
             A = M.T
             b = np.zeros([np.shape(A)[0], 1])
             b[-1, 0] = 1
             b[-2, 0] = 1
             try:
-                Ld = np.linalg.solve(A, b)
+                ld = np.linalg.solve(A, b)
             except np.linalg.LinAlgError:
                 continue
-            if all(Ld) >= 0:
+            if all(ld) >= 0:
                 break
-        if any(np.isnan(Ld)):
+        if any(np.isnan(ld)):
             raise(ValueError("The Facet seems not to intersect the support curve!"))
         else:
             self.seg = self.phi[i:i+2, :]
-        self.lmbas = Ld[0:-2, 0]
-        delt = Ld[-2:, 0]
-        self.so = (delt.T @ self.seg).T
-        if (delt[1] >= 0.2):
-            xi_vec = (self.phi[i+1, :] - self.phi[i, :]).T
-            self.xi = xi_vec / (np.linalg.norm(xi_vec))
-        else:
+        self.l_int = ld[0:-2, 0]
+        d_int = ld[-2:, 0]
+        self.so = (d_int @ self.seg).T
+        if (d_int[0] <= 0.2) and i < p-2:       # When the point is close to the end point of segment
             xi_vec = (self.phi[i+2, :] - self.phi[i+1, :]).T
-            self.xi = xi_vec / (np.linalg.norm(xi_vec))
+        else:
+            xi_vec = (self.phi[i+1, :] - self.phi[i, :]).T
+        self.xi = xi_vec / (np.linalg.norm(xi_vec))
 
     def optimize_inputs(self):
         """Runs a new optimization problem to update inputs"""
@@ -123,7 +116,7 @@ class rcpSimplex():
         #alpha_0 = rs(self.alphaMat[0, :], [self.n, 1])
         self.calc_ourward_normals()
         # Optimization problem
-        u = [cvx.Variable([self.m, 1]) for i in range(1, self.n+1)]
+        u = [cvx.Variable((self.m, 1)) for i in range(1, self.n+1)]
         constraints = []
         obj = 0
         for i in range(1, self.n+1):
@@ -132,7 +125,7 @@ class rcpSimplex():
             constraints += [self.xi.T @ (self.asys.A @ rs(self.vMat[i, :], [self.n, 1]) + self.asys.B @ u[i-1] + self.asys.a) >= eps]
             # Invariance Constraints
             I = list(np.arange(1, self.n+1))    # Index Set
-            _ = I.pop(i)                      # Index Set
+            _ = I.pop(i-1)                      # Pop the index opposite to current face
             for j in I:
                 hj = rs(self.h[j, :], [self.n, 1])
                 constraints += [hj.T @ (self.asys.A @ rs(self.vMat[i, :], [self.n, 1]) + self.asys.B @ u[i-1] + self.asys.a) <= -eps]
@@ -142,6 +135,8 @@ class rcpSimplex():
         if not prob.is_dcp():
             raise(ValueError("The problem doesn't follow DCP rules!!"))
         prob.solve()
+        print(prob.status)
+        print(u[1].value)
         for i in range(1, self.n+1):
             self.uMat[i, :] = rs(u[i-1].value, [1, self.m])
 
@@ -149,9 +144,8 @@ class rcpSimplex():
         """ Calculates the matrix of outward normals of all the facets"""
         self.F = []    # Facets
         self.h = np.zeros([self.n+1, self.n])
-        f = np.arange(0, self.n+1)
         for i in range(self.n+1):
-            I = list(np.arange(0, self.n))
+            I = list(np.arange(0, self.n+1))
             j = I.pop(i)    # Facet index set
             fMat = np.zeros([self.n, self.n]) # Facet vertex Matrix
             for i in range(self.n):
@@ -219,7 +213,7 @@ if __name__=="__main__":
     u_max = np.matrix([[6], [6], [6]])
     M = np.kron( np . matrix ([[1] ,[ -1]]) , np . eye (3))
     u_lims = np.ones([2*3, 1]) * umax
-    W = np.matrix([[0, 0, 0], [1, 1, 1], [2, 2, 2], [3, 3, 3]])
+    W = np.matrix([[0, 0, 0], [1, 1, 1], [2, 2, 2], [3, 3, 3], [4,4,4], [5, 5, 5]])
     rsp = rcpSimplex(3, lsys, vMat, uMat, W, xi, u_lims)
     print(rsp.in_simplex([0.3, 0.3, 0.3]))
     print(rsp.get_u([0.3,0.3, 0.3]))
