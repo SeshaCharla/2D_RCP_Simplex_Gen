@@ -1,5 +1,3 @@
-from cvxpy.atoms import axis_atom
-from pypoman import duality
 import rcpSimplex as rsp
 import numpy as np
 from numpy import reshape as rs

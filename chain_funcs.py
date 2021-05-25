@@ -8,58 +8,34 @@ import support_vecs as svc
 import space as spc
 
 
-def init_chain(F, xi, sys):
-    """ Assign control inputs to the vertices of the initial simplex"""
-    eps = 1e-4
-    n = 2
-    *_, m =  np.shape(sys.B)
-    v0 = rs(F[0, :], [n, 1])
-    v1 = rs(F[1, :], [n, 1])
+def init_chain(n, asys, F, xi, Lmax, u_max, u_min, phi):
+    """ Create initial simplex"""
+    eps = 1e-6
+    *_, m =  np.shape(asys.B)
 
-    # Optimization Problem
-    u0 = cvx.Variable([m, 1])
-    u1 = cvx.Variable([m, 1])
-
+    # Optimization problem
+    u = [cvx.Variable((m, 1)) for i in range(n)]
     constraints = []
-    # Flow condition on v0
-    Av0Flo = xi.T @ sys.B
-    bv0Flo = xi.T @ sys.A @ v0 + xi.T @ sys.a
-    constraints += [Av0Flo @ u0 + bv0Flo >= eps]
-    # Flow condition on v1
-    Av1Flo = xi.T @ sys.B
-    bv1Flo = xi.T @ sys.A @ v1 + xi.T @ sys.a
-    constraints += [Av1Flo @ u1 + bv1Flo >= eps]
-    #Constraints on u
-    umax = 6
-    u_max = np.matrix([[6], [6]])
-    M = np.kron( np . matrix ([[1] ,[ -1]]) , np . eye (m))
-    p = np.ones([2*m, 1]) * umax
-    constraints += [M @ u0 <= p, M @ u1 <= p]
+    obj = 0
+    for i in range(n):
+        obj += xi.T @ (asys.A @ rs(F[i, :], [n, 1]) + asys.B @ u[i] + asys.a)
+        # Flow constraints
+        constraints += [xi.T @ (asys.A @ rs(F[i, :], [n, 1]) + asys.B @ u[i] + asys.a) >= eps]
+        # input constraints
+        constraints += [u[i] <= u_max, u[i]>= u_min]
+    prob = cvx.Problem(cvx.Maximize(obj), constraints=constraints)
+    if not prob.is_dcp():
+        raise(ValueError("The problem doesn't follow DCP rules!!"))
+    prob.solve()
+    if prob.status in ["infeasible", "unbounded"]:
+        raise(ValueError("The optimization problem is {}.\nCheck control input Limits!!".format(prob.status)))
+    splxs = []
+    for ui in u:
+        splxs.append(simgen.rcp_simgen(n, asys, F, ui.value, xi, Lmax, u_max, u_min, phi))
+    c_err = np.array([s.centering_err for s in splxs])
+    return splxs[np.argmin(c_err)]
 
-    # Objective function calculations:
-    xi_n = nr.normal_2(xi)
-    # Max flow condition on v0
-    Av0Mflo = xi_n.T @ sys.B
-    bv0Mflo = xi_n.T @ sys.A @ v0 + xi_n.T @ sys.a
-    # Max flow condition on v1
-    Av1Mflo = xi_n.T @ sys.B
-    bv1Mflo = xi_n.T @ sys.A @ v1 + xi_n.T @ sys.a
-    # Objective Function
-    obj =  cvx.norm(Av0Mflo @ u0 + bv0Mflo)  + cvx.norm(Av1Mflo @ u1 + bv1Mflo)
-
-    # CVX problem
-    prob = cvx.Problem(cvx.Minimize(obj), constraints)
-    result = prob.solve()
-
-    # u matrix
-    uMat = np.zeros([n, m])
-    uMat[0, :] = np.reshape(u0.value, [1, m])
-    uMat[1, :] = np.reshape(u1.value, [1, m])
-
-    return uMat
-
-
-def prop_chain(F, uMat, sys, s_in, del_s):
+def prop_chain(n, sys, old_spx,  xi, Lmax, u_max, u_min, phi):
     """ Propagates the simplex chain"""
     n = 2
     s_o, xi = svc.chain_sup(s_in, del_s)
@@ -81,6 +57,9 @@ def prop_chain(F, uMat, sys, s_in, del_s):
         Simplex = S1
     return Simplex
 
+def term_chain():
+    """Terminate the chain of simplices by creating simplx with equilibrium inside"""
+
 
 
 if __name__=="__main__":
@@ -88,9 +67,9 @@ if __name__=="__main__":
     import support_vecs as svc
     import system as ss
 
-    s_in = np.matrix([[1], [-1]])
-    F_init = spc.I
-    del_s = 1
-    s_o, xi_init = svc.chain_sup(s_in, del_s)
-    uMat = init_chain(F_init, xi_init, ss.lsys)
-    Sim = prop_chain(F_init, uMat, ss.lsys, s_in, del_s)
+    F = spc.I
+    Lmax = 3
+    u_max = 2*np.ones([2, 1])
+    u_min = -2*np.ones([2, 1])
+    xi = np.matrix([[0], [-1]])
+    Sim = init_chain(2, ss.lsys, F, xi, Lmax, u_max, u_min, spc.W)
