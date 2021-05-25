@@ -217,6 +217,6 @@ if __name__=="__main__":
     xi = np.matrix([[0], [-1]])
     uMat = np.zeros([3, 2])
     uMat[0,:] = np.array([[1, 0]])
-    u_max = 6*np.ones([2, 1])
-    u_min = -6*np.ones([2, 1])
+    u_max = 2*np.ones([2, 1])
+    u_min = -2*np.ones([2, 1])
     rsp = rcpSimplex(2, system.lsys, vMat, uMat, spc.W, xi, u_max, u_min)
