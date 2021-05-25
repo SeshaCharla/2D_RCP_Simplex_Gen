@@ -7,8 +7,55 @@ import normals as nr
 from itertools import combinations
 
 
-class rcpSimplex2():
-    """RCP simplex Class for 2D"""
+class Simplex():
+    """Just Geometric aspects of the simplex"""
+    def __init__(self, n, vMat):
+        """n - Dimension; asys - affine linear system;
+           vMat - Vertex Matrix; uMat - Control input matrix,
+           phi - support way-point set"""
+        # Given
+        self.n = n
+        self.vMat = vMat
+        # Sanity Checks
+        if (n+1) != np.shape(self.vMat)[0] or n != np.shape(self.vMat)[1] :
+            raise(ValueError("The dimensions don't match!"))
+        # # Half Space Represintation
+        # self.A, self.b = pp.duality.compute_polytope_halfspaces(np.array(self.vMat))
+        self.calc_ourward_normals()
+
+    def calc_ourward_normals(self):
+        """ Calculates the matrix of outward normals of all the facets"""
+        self.F = []    # Facets
+        self.h = np.zeros([self.n+1, self.n])
+        for i in range(self.n+1):
+            I = list(np.arange(0, self.n+1))
+            j = I.pop(i)    # Facet index set
+            fMat = np.zeros([self.n, self.n]) # Facet vertex Matrix
+            for i in range(self.n):
+                fMat[i, :] = self.vMat[I[i], :]
+            self.F.append(fMat)
+            vecMat = np.zeros([self.n-1, self.n])
+            for i in range(self.n-1):
+                vecMat[i, :] = fMat[i+1, :] - fMat[0, :]
+            h_n = nr.normal(vecMat, self.n)
+            edge = rs(self.vMat[j,:] - fMat[0,:], [self.n, 1])
+            edge_n = edge/np.linalg.norm(edge)
+            if (h_n.T @ edge_n) < 0 :
+                h_n = -h_n
+            self.h[i, :] = rs(h_n, [1, self.n])
+
+    # def in_simplex(self, x):
+    #     """x is np array"""
+    #     y = rs(x, [self.n, 1])
+    #     z = (self.A @ y).T - self.b
+    #     if np.all(z <= 0):
+    #         return True
+    #     else:
+    #         return False
+
+
+class rcpSimplex():
+    """RCP simplex Class for n-D"""
     def __init__(self, n, asys, vMat, uMat, phi, xi_gen, u_lims):
         """n - Dimension; asys - affine linear system;
            vMat - Vertex Matrix; uMat - Control input matrix,
@@ -34,10 +81,11 @@ class rcpSimplex2():
             self.optimize_inputs()
         self.calc_affine_feedback()
         self.calc_vertex_flows()
+        self.set_quality()
 
     def calc_exit_flow(self):
         """Calculate the exit facet intersection and the flow vector"""
-        Fo = vMat[1:, :]    # Matrix containing the exit facet vertices
+        Fo = self.vMat[1:, :]    # Matrix containing the exit facet vertices
         p, *_ = np.shape(self.phi)
         Ld = np.empty([self.n+2, 1])
         for i in range(p-1):
@@ -46,7 +94,7 @@ class rcpSimplex2():
             A = M.T
             b = np.zeros([np.shape(A)[0], 1])
             b[-1, 0] = 1
-            b[-2, ] = 1
+            b[-2, 0] = 1
             try:
                 Ld = np.linalg.solve(A, b)
             except np.linalg.LinAlgError:
@@ -57,6 +105,7 @@ class rcpSimplex2():
             raise(ValueError("The Facet seems not to intersect the support curve!"))
         else:
             self.seg = self.phi[i:i+2, :]
+        self.lmbas = Ld[0:-2, 0]
         delt = Ld[-2:, 0]
         self.so = (delt.T @ self.seg).T
         if (delt[1] >= 0.2):
@@ -70,19 +119,19 @@ class rcpSimplex2():
         """Runs a new optimization problem to update inputs"""
         eps = 1e-3
         M = np.kron(np.matrix([[1] ,[ -1]]) , np.eye(self.m))
-        vr = rs(self.vMat[0,:], [self.n, 1])
-        alpha_0 = rs(self.alphaMat[0, :], [self.n, 1])
+        #vr = rs(self.vMat[0,:], [self.n, 1])
+        #alpha_0 = rs(self.alphaMat[0, :], [self.n, 1])
         self.calc_ourward_normals()
         # Optimization problem
-        u = [cvx.Variable([self.m, 1]) for i in range(1, self.n)]
+        u = [cvx.Variable([self.m, 1]) for i in range(1, self.n+1)]
         constraints = []
         obj = 0
-        for i in range(1, self.n):
+        for i in range(1, self.n+1):
             obj += self.xi.T @ (self.asys.A @ rs(self.vMat[i, :], [self.n, 1]) + self.asys.B @ u[i-1] + self.asys.a)
             # Flow constraints
             constraints += [self.xi.T @ (self.asys.A @ rs(self.vMat[i, :], [self.n, 1]) + self.asys.B @ u[i-1] + self.asys.a) >= eps]
             # Invariance Constraints
-            I = list(np.arange(1, self.n))    # Index Set
+            I = list(np.arange(1, self.n+1))    # Index Set
             _ = I.pop(i)                      # Index Set
             for j in I:
                 hj = rs(self.h[j, :], [self.n, 1])
@@ -93,7 +142,7 @@ class rcpSimplex2():
         if not prob.is_dcp():
             raise(ValueError("The problem doesn't follow DCP rules!!"))
         prob.solve()
-        for i in range(1, self.n):
+        for i in range(1, self.n+1):
             self.uMat[i, :] = rs(u[i-1].value, [1, self.m])
 
     def calc_ourward_normals(self):
@@ -151,6 +200,10 @@ class rcpSimplex2():
         u = self.K @ y + self.g
         return u
 
+    def set_quality(self):
+        """Get the quality of simplex"""
+        self.qlty = np.linalg.norm(self.lmbas- (1/self.n)*np.ones(self.n))
+
 
 if __name__=="__main__":
     import system
@@ -167,6 +220,6 @@ if __name__=="__main__":
     M = np.kron( np . matrix ([[1] ,[ -1]]) , np . eye (3))
     u_lims = np.ones([2*3, 1]) * umax
     W = np.matrix([[0, 0, 0], [1, 1, 1], [2, 2, 2], [3, 3, 3]])
-    rsp = rcpSimplex2(3, lsys, vMat, uMat, W, xi, u_lims)
-    print(rsp.in_simplex([0.25, 0.25, 0.25]))
-    print(rsp.get_u([0.25,0.25, 0.25]))
+    rsp = rcpSimplex(3, lsys, vMat, uMat, W, xi, u_lims)
+    print(rsp.in_simplex([0.3, 0.3, 0.3]))
+    print(rsp.get_u([0.3,0.3, 0.3]))

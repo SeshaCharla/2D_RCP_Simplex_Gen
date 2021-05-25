@@ -29,7 +29,7 @@ plt.yticks(np.arange(-6, 7))
 plt.grid()
 
 j = 0
-while (spc.which_seg(s_in) != (np.shape(spc.W))[0] -1) and j<309:
+while (spc.which_seg(s_in) != (np.shape(spc.W))[0] -1) and j<50:
     Sim = cf.prop_chain(F, uMat, ss.lsys, s_in, del_s)
     F = Sim.vMat[1:,:]
     uMat = Sim.uMat[1:,:]

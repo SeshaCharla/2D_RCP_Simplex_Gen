@@ -1,12 +1,11 @@
-from os import altsep
 import numpy as np
-from numpy.lib.financial import _ipmt_dispatcher
 from numpy import reshape as rs
 import cvxpy as cvx
 import normals as nr
 import rcp_simgen as simgen
 import lambdas_max as lmax
 import support_vecs as svc
+import space as spc
 
 
 def init_chain(F, xi, sys):
@@ -69,18 +68,17 @@ def prop_chain(F, uMat, sys, s_in, del_s):
     u0 = rs(uMat[0, :], [n, 1])
     alpha0 = sys.A @ rs(F0[0,:], [n, 1])  + sys.B @ u0 + sys.a
     L0max = lmax.lambda_max(rs(F0[0, :], [n, 1]), alpha0, s_in, s_o)
-    S0, r0 = simgen.rcp_simgen(F0, u0, sys, xi, L0max)
+    S0, r0 = simgen.rcp_simgen(F0, u0, sys, xi, L0max, spc.W)    # F, u0, sys, xi, Lmax, phi
     # Second one
     F1 = np.flip(F, 0)
     u1 = rs(uMat[1, :], [n, 1])
     alpha1 = sys.A @ rs(F1[0,:], [n, 1])  + sys.B @ u1 + sys.a
     L1max = lmax.lambda_max(rs(F1[0, :], [n, 1]), alpha1, s_in, s_o)
-    S1, r1 = simgen.rcp_simgen(F1, u1, sys, xi, L1max)
-    if r0 <= r1:
+    S1, r1 = simgen.rcp_simgen(F1, u1, sys, xi, L1max, spc.W)
+    if S0.qlty <= S1.qlty:
         Simplex = S0
     else:
         Simplex = S1
-    Simplex.set_xi(xi)
     return Simplex
 
 
