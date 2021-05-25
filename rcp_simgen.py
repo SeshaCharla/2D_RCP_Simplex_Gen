@@ -9,10 +9,10 @@ import normals as nr
 
 
 
-def rcp_simgen(n, F, u0, alpha0, asys, xi, Lmax, ulims, phi):
+def rcp_simgen(n, F, u0, alpha0, asys, xi, Lmax, u_max, u_min, phi):
     """Returns an RCP simplex with the proper control inputs (column vector) and velocity vectors"""
-    eps = 1e-3
-    m =  np.shape(sys.B)[1]
+    eps = 1e-6
+    m =  np.shape(asys.B)[1]
     # Sanity Checks
     if n != np.shape(F)[0] or n!=np.shape(F)[1]:
         raise(ValueError("Dimensions don't match!"))
@@ -22,61 +22,57 @@ def rcp_simgen(n, F, u0, alpha0, asys, xi, Lmax, ulims, phi):
     # Finding the outward normals
     v_n = F[0, :] + Lmax*rs(alpha0, [1, n])
     vMat_ = np.append(F, v_n, axis=0)
-    print(vMat_)
     dummy_sim = rsp.Simplex(n, vMat_)
     h = dummy_sim.h
 
-    # Matrix for input limits
-    M = np.kron(np.matrix([[1] ,[ -1]]) , np.eye(m))
-
     # Optimization problem
-    u = [cvx.Variable([m, 1]) for i in range(1, n+1)]
-    print(len(u))
-    L = cvx.Variable(1)
+    u = [cvx.Variable((m, 1)) for i in range(1, n+1)]
+    l_gen = cvx.Variable()
     constraints = []
     obj = 0
-    constraints = [L>=0, L<=Lmax]
     for i in range(1, n):
-            obj += xi.T @ (asys.A @ rs(F[i, :], [n, 1]) + asys.B @ u[i-1] + asys.a)
-            # Flow constraints
-            constraints += [xi.T @ (asys.A @ rs(F[i, :], [n, 1]) + asys.B @ u[i-1] + asys.a) >= eps]
-            # Invariance Constraints
-            I = list(np.arange(1, n+1))    # Index Set
-            _ = I.pop(i)                      # Index Set
-            for j in I:
-                hj = rs(h[j, :], [n, 1])
-                constraints += [hj.T @ (asys.A @ rs(F[i, :], [n, 1]) + asys.B @ u[i-1] + asys.a) <= -eps]
-            # input constraints
-            constraints += [M @ u[i-1] <= u_lims]
-    # For nth new vertex
-    obj += xi.T @ (asys.A @ (rs(F[0, :], [n, 1]) + L * alpha0) + asys.B @ u[n-1] + asys.a)
+        obj += xi.T @ (asys.A @ rs(F[i, :], [n, 1]) + asys.B @ u[i-1] + asys.a)
+        # Flow constraints
+        constraints += [xi.T @ (asys.A @ rs(F[i, :], [n, 1]) + asys.B @ u[i-1] + asys.a) >= eps]
+        # Invariance Constraints
+        I = list(np.arange(1, n+1))    # Index Set
+        _ = I.pop(i-1)                      # Pop the index opposite to current face
+        for j in I:
+            hj = rs(h[j, :], [n, 1])
+            constraints += [hj.T @ (asys.A @ rs(F[i, :], [n, 1]) + asys.B @ u[i-1] + asys.a) <= -eps]
+        # input constraints
+        constraints += [u[i-1] <= u_max, u[i-1]>= u_min]
+    # For the new point
+    i = n
+    obj += xi.T @ (asys.A @ (rs(F[0, :], [n, 1])  + l_gen*alpha0)+ asys.B @ u[i-1] + asys.a)
     # Flow constraints
-    constraints += [xi.T @ (asys.A @ (rs(F[0, :], [n, 1]) + L * alpha0) + asys.B @ u[n-1] + asys.a) >= eps]
+    constraints += [xi.T @ (asys.A @ (rs(F[0, :], [n, 1])  + l_gen*alpha0) + asys.B @ u[i-1] + asys.a) >= eps]
     # Invariance Constraints
     I = list(np.arange(1, n+1))    # Index Set
-    _ = I.pop(n-1)                      # Index Set
+    _ = I.pop(i-1)                      # Pop the index opposite to current face
     for j in I:
         hj = rs(h[j, :], [n, 1])
-        constraints += [hj.T @ (asys.A @ (rs(F[0, :], [n, 1]) + L * alpha0) + asys.B @ u[i-1] + asys.a) <= -eps]
+        constraints += [hj.T @ (asys.A @ (rs(F[0, :], [n, 1])  + l_gen*alpha0) + asys.B @ u[i-1] + asys.a) <= -eps]
     # input constraints
-    constraints += [M @ u[n-1] <= u_lims]
-    # Setting up the problem
+    constraints += [u[i-1] <= u_max, u[i-1]>= u_min]
+    # The problem
     prob = cvx.Problem(cvx.Maximize(obj), constraints=constraints)
     if not prob.is_dcp():
         raise(ValueError("The problem doesn't follow DCP rules!!"))
     prob.solve()
-    # u matrix
-    print(u[0].value)
+    if prob.status in ["infeasible", "unbounded"]:
+        raise(ValueError("The optimization problem is {}.\nCheck control input Limits!!".format(prob.status)))
+    #u Matrix
     uMat = np.zeros([n+1, m])
-    uMat[0, :] = np.reshape(u0, [1, m])
+    uMat[0, :] = rs(u0, [1, m])
     for i in range(1, n+1):
         uMat[i, :] = rs(u[i-1].value, [1, m])
 
     # v Matrix
-    v_n = F[0, :] + L.value*rs(alpha0, [1, n])
-    vMat_ = np.append(F, v_n, axis=0)
+    v_n = F[0, :] + l_gen.value*rs(alpha0, [1, n])
+    vMat = np.append(F, v_n, axis=0)
 
-    S = rsp.rcpSimplex(n, asys, vMat, uMat, phi, xi, u_lims)  # (n, asys, vMat, uMat, phi, xi_gen, u_lims)
+    S = rsp.rcpSimplex(n, asys, vMat, uMat, phi, xi, u_max, u_min)  # (n, asys, vMat, uMat, phi, xi_gen, u_max, u_min)
     return S
 
 
@@ -89,12 +85,13 @@ if __name__=="__main__":
     F = np.matrix([[0, 0],
                    [0, 1]])
     u0 = np.matrix([[1.2], [0]])
-    alpha0 = sys.lsys.A @ rs(F[0, :],[2, 1]) + sys.lsys.B @ u0 + sys.lsys.a
+    alpha0 = sys.lsys.A @ rs(F[0, :],[2, 1]) + sys.lsys.B  @ u0 + sys.lsys.a
+    #print(alpha0)
     Lmax = 1
-    umax = 12
-    u_lims = np.ones([2*2, 1]) * umax
-    xi = np.matrix([[1], [0]])
-    Sim = rcp_simgen(2, F, u0, alpha0, sys.lsys, xi, Lmax, u_lims, spc.W)
+    u_max = 20*np.ones([2, 1])
+    u_min = -20*np.ones([2, 1])
+    xi = np.matrix([[1], [1]])
+    Sim = rcp_simgen(2, F, u0, alpha0, sys.lsys, xi, Lmax, u_max, u_min, spc.W)
     # xi1 = np.matrix([[1], [0.5]])
     # F1 = np.matrix([Sim.vMat[1, :], Sim.vMat[2,:]])
     # u1 = np.reshape(Sim.uMat[1,:], [2, 1])
