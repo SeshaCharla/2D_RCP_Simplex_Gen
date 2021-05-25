@@ -1,10 +1,9 @@
 import numpy as np
 import pypoman as pp
 from numpy import reshape as rs
-import space as spc
 import cvxpy as cvx
 import normals as nr
-from itertools import combinations
+
 
 
 class Simplex():
@@ -46,7 +45,7 @@ class Simplex():
 
 class rcpSimplex():
     """RCP simplex Class for n-D"""
-    def __init__(self, n, asys, vMat, uMat, phi, xi_gen, u_lims):
+    def __init__(self, n, asys, vMat, uMat, phi, xi_gen, u_max, u_min):
         """n - Dimension; asys - affine linear system;
            vMat - Vertex Matrix; uMat - Control input matrix,
            phi - support way-point set"""
@@ -58,7 +57,8 @@ class rcpSimplex():
         self.uMat = uMat
         self.phi = phi
         self.xi_gen = xi_gen
-        self.u_lims = u_lims    # u_lims=[u1_max, u2_max, ..., -u1_min, -u2_min, ...]
+        self.u_max = u_max
+        self.u_min = u_min
         # Sanity Checks
         if (n+1) != np.shape(self.vMat)[0] or np.shape(self.vMat)[0] != np.shape(self.uMat)[0] or n != np.shape(self.vMat)[1] or \
             self.m != np.shape(self.uMat)[1]:
@@ -67,17 +67,16 @@ class rcpSimplex():
         self.A, self.b = pp.duality.compute_polytope_halfspaces(np.array(self.vMat))
         self.calc_vertex_flows()
         self.calc_exit_flow()
-        #if (0 < 1- np.abs(self.xi_gen.T @ self.xi) < 1e-3) :
         self.optimize_inputs()
         self.calc_affine_feedback()
         self.calc_vertex_flows()
-        self.set_quality()
+        self.calc_centering_err()
 
     def calc_exit_flow(self):
         """Calculate the exit facet intersection and the flow vector"""
         Fo = self.vMat[1:, :]    # Matrix containing the exit facet vertices
         p, *_ = np.shape(self.phi)  # Total number of segments
-        ld = np.nan * np.ones([self.n+2, 1])   # \lambda1, ..., -\delta1, -\delta2,...
+        ld = np.nan * np.ones([self.n+2, 1])   # \lambda1, ...\lambdan, -\delta1, -\delta2,...
         for i in range(p-1):
             # Constructing A and b matrices
             M_vert = np.append(Fo, -1*self.phi[i:i+2,:], axis=0)
@@ -131,9 +130,6 @@ class rcpSimplex():
     def optimize_inputs(self):
         """Runs a new optimization problem to update inputs"""
         eps = 1e-6
-        M = np.kron(np.matrix([[1] ,[ -1]]) , np.eye(self.m))
-        #vr = rs(self.vMat[0,:], [self.n, 1])
-        #alpha_0 = rs(self.alphaMat[0, :], [self.n, 1])
         self.calc_ourward_normals()
         # Optimization problem
         u = [cvx.Variable((self.m, 1)) for i in range(1, self.n+1)]
@@ -150,13 +146,13 @@ class rcpSimplex():
                 hj = rs(self.h[j, :], [self.n, 1])
                 constraints += [hj.T @ (self.asys.A @ rs(self.vMat[i, :], [self.n, 1]) + self.asys.B @ u[i-1] + self.asys.a) <= -eps]
             # input constraints
-            constraints += [M @ u[i-1] <= self.u_lims]
+            constraints += [u[i-1] <= self.u_max, u[i-1]>= self.u_min]
         prob = cvx.Problem(cvx.Maximize(obj), constraints=constraints)
         if not prob.is_dcp():
             raise(ValueError("The problem doesn't follow DCP rules!!"))
         prob.solve()
-        print(prob.status)
-        print(u[1].value)
+        if prob.status in ["infeasible", "unbounded"]:
+            raise(ValueError("The optimization problem is {}.\nCheck control input Limits!!".format(prob.status)))
         for i in range(1, self.n+1):
             self.uMat[i, :] = rs(u[i-1].value, [1, self.m])
 
@@ -193,13 +189,14 @@ class rcpSimplex():
         u = self.K @ y + self.g
         return u
 
-    def set_quality(self):
+    def calc_centering_err(self):
         """Get the quality of simplex"""
-        self.qlty = np.linalg.norm(self.lmbas- (1/self.n)*np.ones(self.n))
+        self.centering_err = np.linalg.norm(self.l_int- (1/self.n)*np.ones(self.n))
 
 
 if __name__=="__main__":
     import system
+    import space as spc
     # Showing for 3D case
     A = np.eye(3)
     B = np.eye(3)
@@ -208,11 +205,9 @@ if __name__=="__main__":
     vMat = np.matrix([[0, 0, 0], [1, 0, 0], [0, 1, 0], [0, 0, 1]])
     uMat = np.matrix([[1, 1, 1], [2, 1, 1], [3, 1, 1], [1, 1, 1]])
     xi = np.matrix([[0], [1], [1]])
-    umax = 12
-    u_max = np.matrix([[6], [6], [6]])
-    M = np.kron( np . matrix ([[1] ,[ -1]]) , np . eye (3))
-    u_lims = np.ones([2*3, 1]) * umax
+    u_max = 6*np.ones([3, 1])
+    u_min = -6*np.ones([3, 1])
     W = np.matrix([[0, 0, 0], [1, 1, 1], [2, 2, 2], [3, 3, 3], [4,4,4], [5, 5, 5]])
-    rsp = rcpSimplex(3, lsys, vMat, uMat, W, xi, u_lims)
+    rsp = rcpSimplex(3, lsys, vMat, uMat, W, xi, u_max, u_min)
     print(rsp.in_simplex([0.3, 0.3, 0.3]))
     print(rsp.get_u([0.3,0.3, 0.3]))
