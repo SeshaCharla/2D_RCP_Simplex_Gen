@@ -197,17 +197,26 @@ class rcpSimplex():
 if __name__=="__main__":
     import system
     import space as spc
-    # Showing for 3D case
-    A = np.eye(3)
-    B = np.eye(3)
-    a = np.zeros([3, 1])
-    lsys = system.asys(A, B, a)
-    vMat = np.matrix([[0, 0, 0], [1, 0, 0], [0, 1, 0], [0, 0, 1]])
-    uMat = np.matrix([[1, 1, 1], [2, 1, 1], [3, 1, 1], [1, 1, 1]])
-    xi = np.matrix([[0], [1], [1]])
-    u_max = 6*np.ones([3, 1])
-    u_min = -6*np.ones([3, 1])
-    W = np.matrix([[0, 0, 0], [1, 1, 1], [2, 2, 2], [3, 3, 3], [4,4,4], [5, 5, 5]])
-    rsp = rcpSimplex(3, lsys, vMat, uMat, W, xi, u_max, u_min)
-    print(rsp.in_simplex([0.3, 0.3, 0.3]))
-    print(rsp.get_u([0.3,0.3, 0.3]))
+    # # Showing for 3D case
+    # A = np.eye(3)
+    # B = np.eye(3)
+    # a = np.zeros([3, 1])
+    # lsys = system.asys(A, B, a)
+    # vMat = np.matrix([[0, 0, 0], [1, 0, 0], [0, 1, 0], [0, 0, 1]])
+    # uMat = np.matrix([[1, 1, 1], [2, 1, 1], [3, 1, 1], [1, 1, 1]])
+    # xi = np.matrix([[0], [1], [1]])
+    # u_max = 6*np.ones([3, 1])
+    # u_min = -6*np.ones([3, 1])
+    # W = np.matrix([[0, 0, 0], [1, 1, 1], [2, 2, 2], [3, 3, 3], [4,4,4], [5, 5, 5]])
+    # rsp = rcpSimplex(3, lsys, vMat, uMat, W, xi, u_max, u_min)
+    # print(rsp.in_simplex([0.3, 0.3, 0.3]))
+    # print(rsp.get_u([0.3,0.3, 0.3]))
+
+    # 2D case
+    vMat = np.append(spc.I, np.array([[0.5, -2]]), axis=0)
+    xi = np.matrix([[0], [-1]])
+    uMat = np.zeros([3, 2])
+    uMat[0,:] = np.array([[1, 0]])
+    u_max = 6*np.ones([2, 1])
+    u_min = -6*np.ones([2, 1])
+    rsp = rcpSimplex(2, system.lsys, vMat, uMat, spc.W, xi, u_max, u_min)
