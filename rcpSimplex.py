@@ -19,8 +19,7 @@ class Simplex():
         # Sanity Checks
         if (n+1) != np.shape(self.vMat)[0] or n != np.shape(self.vMat)[1] :
             raise(ValueError("The dimensions don't match!"))
-        # # Half Space Represintation
-        # self.A, self.b = pp.duality.compute_polytope_halfspaces(np.array(self.vMat))
+
         self.calc_ourward_normals()
 
     def calc_ourward_normals(self):
@@ -31,12 +30,12 @@ class Simplex():
             I = list(np.arange(0, self.n+1))
             j = I.pop(i)    # Facet index set
             fMat = np.zeros([self.n, self.n]) # Facet vertex Matrix
-            for i in range(self.n):
-                fMat[i, :] = self.vMat[I[i], :]
+            for k in range(self.n):
+                fMat[k, :] = self.vMat[I[k], :]
             self.F.append(fMat)
             vecMat = np.zeros([self.n-1, self.n])
-            for i in range(self.n-1):
-                vecMat[i, :] = fMat[i+1, :] - fMat[0, :]
+            for l in range(self.n-1):
+                vecMat[l, :] = fMat[l+1, :] - fMat[0, :]
             h_n = nr.normal(vecMat, self.n)
             edge = rs(self.vMat[j,:] - fMat[0,:], [self.n, 1])
             edge_n = edge/np.linalg.norm(edge)
@@ -108,9 +107,30 @@ class rcpSimplex():
             xi_vec = (self.phi[i+1, :] - self.phi[i, :]).T
         self.xi = xi_vec / (np.linalg.norm(xi_vec))
 
+    def calc_ourward_normals(self):
+        """ Calculates the matrix of outward normals of all the facets"""
+        self.F = []    # Facets
+        self.h = np.zeros([self.n+1, self.n])
+        for i in range(self.n+1):
+            I = list(np.arange(0, self.n+1))
+            j = I.pop(i)    # Facet index set
+            fMat = np.zeros([self.n, self.n]) # Facet vertex Matrix
+            for k in range(self.n):
+                fMat[k, :] = self.vMat[I[k], :]
+            self.F.append(fMat)
+            vecMat = np.zeros([self.n-1, self.n])
+            for l in range(self.n-1):
+                vecMat[l, :] = fMat[l+1, :] - fMat[0, :]
+            h_n = nr.normal(vecMat, self.n)
+            edge = rs(self.vMat[j,:] - fMat[0,:], [self.n, 1])
+            edge_n = edge/np.linalg.norm(edge)
+            if (h_n.T @ edge_n) < 0 :
+                h_n = -h_n
+            self.h[i, :] = rs(h_n, [1, self.n])
+
     def optimize_inputs(self):
         """Runs a new optimization problem to update inputs"""
-        eps = 1e-3
+        eps = 1e-6
         M = np.kron(np.matrix([[1] ,[ -1]]) , np.eye(self.m))
         #vr = rs(self.vMat[0,:], [self.n, 1])
         #alpha_0 = rs(self.alphaMat[0, :], [self.n, 1])
@@ -139,27 +159,6 @@ class rcpSimplex():
         print(u[1].value)
         for i in range(1, self.n+1):
             self.uMat[i, :] = rs(u[i-1].value, [1, self.m])
-
-    def calc_ourward_normals(self):
-        """ Calculates the matrix of outward normals of all the facets"""
-        self.F = []    # Facets
-        self.h = np.zeros([self.n+1, self.n])
-        for i in range(self.n+1):
-            I = list(np.arange(0, self.n+1))
-            j = I.pop(i)    # Facet index set
-            fMat = np.zeros([self.n, self.n]) # Facet vertex Matrix
-            for i in range(self.n):
-                fMat[i, :] = self.vMat[I[i], :]
-            self.F.append(fMat)
-            vecMat = np.zeros([self.n-1, self.n])
-            for i in range(self.n-1):
-                vecMat[i, :] = fMat[i+1, :] - fMat[0, :]
-            h_n = nr.normal(vecMat, self.n)
-            edge = rs(self.vMat[j,:] - fMat[0,:], [self.n, 1])
-            edge_n = edge/np.linalg.norm(edge)
-            if (h_n.T @ edge_n) < 0 :
-                h_n = -h_n
-            self.h[i, :] = rs(h_n, [1, self.n])
 
     def calc_affine_feedback(self):
         """Getting the affine feedback matrices"""
