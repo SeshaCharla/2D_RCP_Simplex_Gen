@@ -26,7 +26,7 @@ def rcp_simgen(n, asys, F, u0,  s_in, del_s, u_max, u_min, phi, ptope_list):
 
     # Calculate Lmax
     Lmax = lmax.lambda_max(n, rs(F[0, :], [n, 1]), alpha0, phi, ptope_list, del_max)
-    print(Lmax)
+
     # Finding the outward normals
     v_n = F[0, :] + Lmax*rs(alpha0, [1, n])
     vMat_ = np.append(F, v_n, axis=0)
@@ -82,19 +82,3 @@ def rcp_simgen(n, asys, F, u0,  s_in, del_s, u_max, u_min, phi, ptope_list):
 
     S = rsp.rcpSimplex(n, asys, vMat, uMat, phi, xi, u_max, u_min)  # (n, asys, vMat, uMat, phi, xi_gen, u_max, u_min)
     return S
-
-
-if __name__=="__main__":
-    import system as sys
-    import pypoman as p
-    import matplotlib.pyplot as plt
-    import space as spc
-    ##############################################################################################
-    F = spc.I
-    s_in = np.matrix([[1], [-1]])
-    u0 = np.matrix([[1], [0]])
-    del_s = 1
-    u_max = 2*np.ones([2, 1])
-    u_min = -2*np.ones([2, 1])
-    xi = np.matrix([[0], [-1]])
-    Sim = rcp_simgen(2, sys.lsys, F, u0,  s_in, del_s, u_max, u_min, spc.W, spc.ptope_list)
