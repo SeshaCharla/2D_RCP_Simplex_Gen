@@ -40,7 +40,8 @@ def init_chain(n, asys, F, s_in, del_s, u_max, u_min, phi, ptope_list):
     for ui, Fi in zip(u, F_list):
         spx_list.append(simgen.rcp_simgen(n, asys, Fi, ui.value, s_in, del_s, u_max, u_min, phi, ptope_list))
     c_err = np.array([s.centering_err for s in spx_list])
-    return spx_list[np.argmin(c_err)]
+    print(c_err)
+    return spx_list[np.argmax(c_err)]
 
 def prop_chain(n, asys, old_spx, del_s, u_max, u_min, phi, ptope_list):
     """ Propagates the simplex chain"""

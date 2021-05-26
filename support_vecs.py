@@ -44,6 +44,7 @@ def chain_flow(n, s_in, del_s, phi):
             vec = s_o - s_in
             xi = vec/np.linalg.norm(vec)
         else:
+            print("Making del_s/2")
             del_s = del_s/2
             chain_flow(n, s_in, del_s, phi)
             #raise(ValueError("Too big \\delta s"))

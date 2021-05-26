@@ -13,7 +13,7 @@ n = 2
 F = spc.I
 s_in = np.matrix([[1], [-1]])
 print(svc.which_seg(2, s_in, spc.W))
-del_s = 30999
+del_s = 0.1
 u_max = 6*np.ones([n, 1])
 u_min = -6*np.ones([n, 1])
 chain.append(cf.init_chain(n, ss.lsys, F, s_in, del_s, u_max, u_min, spc.W, spc.ptope_list))
@@ -29,6 +29,7 @@ plt.plot(spc.W[:, 0], spc.W[:, 1])
 plt.xticks(np.arange(-5, 7))
 plt.yticks(np.arange(-6, 7))
 plt.grid()
+
 
 j = 0
 while (svc.which_seg(n, s_in, spc.W) != (np.shape(spc.W))[0] -1) and j<3:

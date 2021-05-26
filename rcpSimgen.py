@@ -23,9 +23,10 @@ def rcp_simgen(n, asys, F, u0,  s_in, del_s, u_max, u_min, phi, ptope_list):
     # del_max and support vector
     s_o, xi = svc.chain_flow(n, s_in, del_s, phi)
     del_max = np.linalg.norm(s_o-s_in)
+
     # Calculate Lmax
     Lmax = lmax.lambda_max(n, rs(F[0, :], [n, 1]), alpha0, phi, ptope_list, del_max)
-
+    print(Lmax)
     # Finding the outward normals
     v_n = F[0, :] + Lmax*rs(alpha0, [1, n])
     vMat_ = np.append(F, v_n, axis=0)
