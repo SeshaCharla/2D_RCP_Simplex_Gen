@@ -68,16 +68,3 @@ def lambda_max(n, v0, alpha0, phi, ptope_list, dels_max):
     ld_int = lambda_int(n, v0, alpha0, phi)
     ld_max = min([0.5*ld_p, 0.5*ld_int])
     return min([ld_max, 2*dels_max])
-
-
-if __name__=="__main__":
-    import space as spc
-    v0 = np.matrix([[0.5], [-1.5]])
-    a0 = np.matrix([[0], [-1]])
-    print(lambda_hit(2, v0, a0, spc.rgn))
-    print(lambda_hit(2, v0, a0, spc.vobs))
-    print(lambda_hit(2, v0, a0, spc.hobs))
-    print(lambda_int(2, v0, a0, spc.W))
-    ptope_list = [spc.rgn, spc.vobs, spc.hobs]
-    print(lambda_ptope(2, v0, a0, ptope_list))
-    print(lambda_max(2, v0, a0, spc.W, ptope_list, 3))
