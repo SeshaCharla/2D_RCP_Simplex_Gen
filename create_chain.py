@@ -1,4 +1,3 @@
-from support_vecs import calc_sin, chain_sup
 import space as spc
 import system as ss
 import chain_funcs as cf
@@ -12,9 +11,12 @@ import pypoman as pp
 chain = []
 n = 2
 F = spc.I
-del_s = 2.8
-s_o, xi = svc.chain_sup(n, s_in, del_s)
-uMat = cf.init_chain(F, xi, ss.lsys)
+s_in = np.matrix([[1], [-1]])
+print(svc.which_seg(2, s_in, spc.W))
+del_s = 30999
+u_max = 6*np.ones([n, 1])
+u_min = -6*np.ones([n, 1])
+chain.append(cf.init_chain(n, ss.lsys, F, s_in, del_s, u_max, u_min, spc.W, spc.ptope_list))
 
 # Plot
 plt.figure()
@@ -29,13 +31,11 @@ plt.yticks(np.arange(-6, 7))
 plt.grid()
 
 j = 0
-while (spc.which_seg(s_in) != (np.shape(spc.W))[0] -1) and j<50:
-    Sim = cf.prop_chain(F, uMat, ss.lsys, s_in, del_s)
-    F = Sim.vMat[1:,:]
-    uMat = Sim.uMat[1:,:]
-    s_in = svc.calc_sin(F)
+while (svc.which_seg(n, s_in, spc.W) != (np.shape(spc.W))[0] -1) and j<3:
+    Sim = cf.prop_chain(n, ss.lsys, chain[-1], del_s, u_max,  u_min, spc.W, spc.ptope_list)
+    s_in = Sim.so
     chain.append(Sim)
-    pp.plot_polygon(Sim.vMat)
+    pp.plot_polygon(Sim.vertices)
     j = j + 1
     print(j)
 for i in range(3):

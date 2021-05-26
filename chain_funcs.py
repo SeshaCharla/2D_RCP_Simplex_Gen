@@ -1,16 +1,19 @@
-from matplotlib.pyplot import axis
 import numpy as np
 from numpy import reshape as rs
 import cvxpy as cvx
 import normals as nr
 import rcp_simgen as simgen
 import space as spc
+import support_vecs as svc
 
 
 def init_chain(n, asys, F, s_in, del_s, u_max, u_min, phi, ptope_list):
     """ Create initial simplex"""
     eps = 1e-6
     *_, m =  np.shape(asys.B)
+
+    # s_o and xi
+    s_o, xi = svc.chain_flow(n, s_in, del_s, phi)
 
     # Optimization problem
     u = [cvx.Variable((m, 1)) for i in range(n)]

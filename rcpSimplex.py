@@ -53,12 +53,14 @@ class rcpSimplex():
         self.n = n
         self.asys = asys
         self.m = np.shape(self.asys.B)[1]    # Input size
-        self.vMat = vMat
+        self.vMat = np.matrix(vMat)
         self.uMat = uMat
         self.phi = phi
         self.xi_gen = xi_gen
         self.u_max = u_max
         self.u_min = u_min
+        # Vertices for plotting
+        self.vertices = [self.vMat[i, :].A1 for i in range(n+1)]
         # Sanity Checks
         if (n+1) != np.shape(self.vMat)[0] or np.shape(self.vMat)[0] != np.shape(self.uMat)[0] or n != np.shape(self.vMat)[1] or \
             self.m != np.shape(self.uMat)[1]:

@@ -5,12 +5,11 @@ from numpy import reshape as rs
 
 class ptope():
     """Convex Polytope class"""
-    def __init__(self, vMat, inside=True):
+    def __init__(self, vMat):
         n, m = np.shape(vMat)
         self.vMat = vMat
         self.vertices = [self.vMat[i, :].A1 for i in range(n)]
         self.A, self.b = pp.duality.compute_polytope_halfspaces(self.vertices)
-        self.inside=True
 
 
 
