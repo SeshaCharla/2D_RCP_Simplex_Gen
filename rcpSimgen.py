@@ -13,7 +13,8 @@ def rcp_simgen(n, asys, F, u0,  s_in, del_s, u_max, u_min, phi, ptope_list):
     """Returns an RCP simplex with the proper control inputs (column vector) and velocity vectors"""
     eps = 1e-6
     m =  np.shape(asys.B)[1]
-    alpha0 = asys.A @ rs(F[0, :], [n, 1]) + asys.B @ u0 + asys.a
+    alpha0_vec = asys.A @ rs(F[0, :], [n, 1]) + asys.B @ u0 + asys.a
+    alpha0 = alpha0_vec/np.linalg.norm(alpha0_vec)
     # Sanity Checks
     if n != np.shape(F)[0] or n!=np.shape(F)[1]:
         raise(ValueError("Dimensions don't match!"))
