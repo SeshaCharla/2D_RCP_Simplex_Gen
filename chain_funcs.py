@@ -3,6 +3,7 @@ from numpy import reshape as rs
 import cvxpy as cvx
 import normals as nr
 import rcpSimgen as simgen
+import rcpSimplex as rspx
 import space as spc
 import support_vecs as svc
 
@@ -62,6 +63,7 @@ def prop_chain(n, asys, old_spx, del_s, u_max, u_min, phi, ptope_list):
     return spx_list[np.argmin(c_err)]
 
 
-
-def term_chain(n, asys, old_spx,  xi, del_max, u_max, u_min, phi, ptope_list):
+def term_chain(n, asys, old_spx, u_max, u_min, phi):
     """Terminate the chain of simplices by creating simplx with equilibrium inside"""
+    F = old_spx.vMat[1:, :]
+    return rspx.terminalSimplex(n, asys, F, phi, u_max, u_min)

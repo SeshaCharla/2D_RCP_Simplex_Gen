@@ -43,7 +43,7 @@ class Simplex():
             self.h[i, :] = rs(h_n, [1, self.n])
 
 
-class rcpSimplex():
+class rcpSimplex(Simplex):
     """RCP simplex Class for n-D"""
     def __init__(self, n, asys, vMat, uMat, phi, xi_gen, u_max, u_min):
         """n - Dimension; asys - affine linear system;
@@ -73,6 +73,7 @@ class rcpSimplex():
         self.calc_affine_feedback()
         self.calc_vertex_flows()
         self.calc_centering_err()
+        self.calc_affine_feedback()
 
     def calc_exit_flow(self):
         """Calculate the exit facet intersection and the flow vector"""
@@ -108,26 +109,26 @@ class rcpSimplex():
             xi_vec = (self.phi[i+1, :] - self.phi[i, :]).T
         self.xi = xi_vec / (np.linalg.norm(xi_vec))
 
-    def calc_ourward_normals(self):
-        """ Calculates the matrix of outward normals of all the facets"""
-        self.F = []    # Facets
-        self.h = np.zeros([self.n+1, self.n])
-        for i in range(self.n+1):
-            I = list(np.arange(0, self.n+1))
-            j = I.pop(i)    # Facet index set
-            fMat = np.zeros([self.n, self.n]) # Facet vertex Matrix
-            for k in range(self.n):
-                fMat[k, :] = self.vMat[I[k], :]
-            self.F.append(fMat)
-            vecMat = np.zeros([self.n-1, self.n])
-            for l in range(self.n-1):
-                vecMat[l, :] = fMat[l+1, :] - fMat[0, :]
-            h_n = nr.normal(vecMat, self.n)
-            edge = rs(self.vMat[j,:] - fMat[0,:], [self.n, 1]) # drawing normal from the the facet point to the opposite point
-            edge_n = edge/np.linalg.norm(edge)
-            if (h_n.T @ edge_n) > 0 :      # Normal at the point should be opposite to the edge
-                h_n = -h_n
-            self.h[i, :] = rs(h_n, [1, self.n])
+    # def calc_ourward_normals(self):
+    #     """ Calculates the matrix of outward normals of all the facets"""
+    #     self.F = []    # Facets
+    #     self.h = np.zeros([self.n+1, self.n])
+    #     for i in range(self.n+1):
+    #         I = list(np.arange(0, self.n+1))
+    #         j = I.pop(i)    # Facet index set
+    #         fMat = np.zeros([self.n, self.n]) # Facet vertex Matrix
+    #         for k in range(self.n):
+    #             fMat[k, :] = self.vMat[I[k], :]
+    #         self.F.append(fMat)
+    #         vecMat = np.zeros([self.n-1, self.n])
+    #         for l in range(self.n-1):
+    #             vecMat[l, :] = fMat[l+1, :] - fMat[0, :]
+    #         h_n = nr.normal(vecMat, self.n)
+    #         edge = rs(self.vMat[j,:] - fMat[0,:], [self.n, 1]) # drawing normal from the the facet point to the opposite point
+    #         edge_n = edge/np.linalg.norm(edge)
+    #         if (h_n.T @ edge_n) > 0 :      # Normal at the point should be opposite to the edge
+    #             h_n = -h_n
+    #         self.h[i, :] = rs(h_n, [1, self.n])
 
     def optimize_inputs(self):
         """Runs a new optimization problem to update inputs"""
@@ -194,3 +195,48 @@ class rcpSimplex():
     def calc_centering_err(self):
         """Get the quality of simplex"""
         self.centering_err = np.linalg.norm(self.l_int- (1/self.n)*np.ones(self.n))
+
+
+class terminalSimplex(rcpSimplex):
+    """The terminal simplex class"""
+    def __init__(self, n, asys, F, phi, u_max, u_min):
+        self.asys = asys
+        self.phi = phi
+        self.vMat = np.append(F, self.phi[-1,:], axis=0)
+        # Vertices for plotting
+        self.vertices = [self.vMat[i, :].A1 for i in range(n+1)]
+        self.n = n
+        self.m = np.shape(asys.B)[1]
+        self.u_min = u_min
+        self.u_max = u_max
+        self.uMat = np.zeros([self.n+1, self.m])
+        self.optimize_inputs()
+        self.calc_affine_feedback()
+        self.calc_vertex_flows()
+
+    def optimize_inputs(self):
+        """Terminate Simplex by solving the all invariance conditions based RCP"""
+        eps = 1e-6
+        self.calc_ourward_normals()
+        # Optimization problem
+        u = [cvx.Variable((self.m, 1)) for i in range(0, self.n+1)]
+        constraints = []
+        obj = 0
+        for i in range(0, self.n+1):
+            obj += 0
+            # Invariance Constraints
+            I = list(np.arange(0, self.n+1))    # Index Set
+            _ = I.pop(i)                      # Pop the index opposite to current face
+            for j in I:
+                hj = rs(self.h[j, :], [self.n, 1])
+                constraints += [hj.T @ (self.asys.A @ rs(self.vMat[i, :], [self.n, 1]) + self.asys.B @ u[i] + self.asys.a) <= -eps]
+            # input constraints
+            constraints += [u[i] <= self.u_max, u[i]>= self.u_min]
+        prob = cvx.Problem(cvx.Maximize(obj), constraints=constraints)
+        if not prob.is_dcp():
+            raise(ValueError("The problem doesn't follow DCP rules!!"))
+        prob.solve()
+        if prob.status in ["infeasible", "unbounded"]:
+            raise(ValueError("The optimization problem is {}.\nCheck control input Limits!!".format(prob.status)))
+        for i in range(0, self.n+1):
+            self.uMat[i, :] = rs(u[i].value, [1, self.m])
