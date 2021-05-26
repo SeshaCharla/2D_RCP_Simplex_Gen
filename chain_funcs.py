@@ -2,7 +2,7 @@ import numpy as np
 from numpy import reshape as rs
 import cvxpy as cvx
 import normals as nr
-import rcp_simgen as simgen
+import rcpSimgen as simgen
 import space as spc
 import support_vecs as svc
 
@@ -65,19 +65,3 @@ def prop_chain(n, asys, old_spx, del_s, u_max, u_min, phi, ptope_list):
 
 def term_chain(n, asys, old_spx,  xi, del_max, u_max, u_min, phi, ptope_list):
     """Terminate the chain of simplices by creating simplx with equilibrium inside"""
-
-
-
-if __name__=="__main__":
-    import space as spc
-    import support_vecs as svc
-    import system as ss
-
-    F = spc.I
-    s_in = np.matrix([[1], [-1]])
-    del_s = 1
-    u_max = 2*np.ones([2, 1])
-    u_min = -2*np.ones([2, 1])
-    xi = np.matrix([[0], [-1]])
-    Sim = init_chain(2, ss.lsys, F, s_in, del_s, u_max, u_min, spc.W, spc.ptope_list)
-    Sim2 = prop_chain(2, ss.lsys, Sim, del_s, u_max, u_min, spc.W, spc.ptope_list)
