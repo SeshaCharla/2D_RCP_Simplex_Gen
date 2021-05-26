@@ -54,4 +54,4 @@ def normal_n(vecMat, n):
 
 
 if __name__=="__main__":
-    print(normal(np.matrix([[1, 0, 0], [0, 1, 0]]), 3))
+    print(normal(np.matrix([[1, 0]]), 2))
