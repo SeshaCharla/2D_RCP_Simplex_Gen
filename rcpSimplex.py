@@ -36,9 +36,9 @@ class Simplex():
             for l in range(self.n-1):
                 vecMat[l, :] = fMat[l+1, :] - fMat[0, :]
             h_n = nr.normal(vecMat, self.n)
-            edge = rs(self.vMat[j,:] - fMat[0,:], [self.n, 1])
+            edge = rs(self.vMat[j,:] - fMat[0,:], [self.n, 1]) # drawing normal from the the facet point to the opposite point
             edge_n = edge/np.linalg.norm(edge)
-            if (h_n.T @ edge_n) < 0 :
+            if (h_n.T @ edge_n) > 0 :               # Normal at the point should be opposite to the edge
                 h_n = -h_n
             self.h[i, :] = rs(h_n, [1, self.n])
 
