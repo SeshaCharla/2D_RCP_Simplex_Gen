@@ -1,16 +1,38 @@
 import numpy as np
-import space as spc
 from numpy import reshape as rs
 
 
-def chain_sup(s_in, del_s):
+def which_seg(n, s, phi):
+    """ Finds the end points of the segments and returns the row index of the starting segment:
+    s_k, s_kp1, k
+    """
+    # sanity checks
+    if n != np.shape(s)[0]:
+        raise(ValueError("Dimensional Mismatch!!"))
+    m, _ = np.shape(phi)
+    s = rs(s, [n, 1])
+    for i in range(m-1):
+        s_k = rs(phi[i, :], [n, 1])
+        s_kp1 = rs(phi[i+1, :], [n, 1])
+        c = s - s_k
+        c1 = s_kp1 - s_k
+        M = np.column_stack([c1, c])
+        if np.linalg.matrix_rank(M) < n:
+            return i
+    raise(ValueError("Not in the segments"))
+
+
+def chain_flow(n, s_in, del_s, phi):
     """ Returns xi and s_o vectors."""
-    n = np.shape(s_in)[0]
-    k = spc.which_seg(s_in)
+    # sanity checks
+    if n != np.shape(s_in)[0]:
+        raise(ValueError("Dimensional Mismatch!!"))
+    m, _ = np.shape(phi)
+    k = which_seg(n, s_in, phi)
     s_kp1 = rs(spc.W[k+1, :], [n, 1])
     diff_vec = s_kp1 - s_in
     diff_norm = np.linalg.norm(diff_vec)
-    if diff_norm <= del_s:
+    if (diff_norm <= del_s):
         xi = diff_vec/diff_norm
         s_o = s_in + del_s * xi
     else:
@@ -22,35 +44,14 @@ def chain_sup(s_in, del_s):
             vec = s_o - s_in
             xi = vec/np.linalg.norm(vec)
         else:
-            raise(ValueError("Too big \\delta s"))
+            del_s = del_s/2
+            chain_flow(n, s_in, del_s, phi)
+            #raise(ValueError("Too big \\delta s"))
     return s_o, xi
 
 
-def calc_sin(F):
-    """ Calculate the point of intersection for the given """
-    m, n = np.shape(spc.W)
-    v0 = rs(F[0, :], [2, 1])
-    v1 = rs(F[1, :], [2, 1])
-    for i in range(m-1):
-        s_k = rs(spc.W[i, :], [n, 1])
-        s_kp1 = rs(spc.W[i+1, :], [n, 1])
-        c1 = v1 - v0
-        c2 = s_kp1 - s_k
-        M = np.column_stack([c1, -c2])
-        d = s_k-v0
-        lds = np.linalg.solve(M, d)
-        if (0<=lds[0,0]<=1) and (0<=lds[1, 0]<=1):
-            s_in = s_k + lds[1, 0]*(s_kp1-s_k)
-            break
-    try:
-        return s_in
-    except:
-        raise(ValueError("Not intersecting"))
-
-
-
 if __name__=="__main__":
-    s0, xi = chain_sup(np.matrix([[1], [-1]]), 0.1)
-    # print(s0)
-    # print(xi)
-    print(calc_sin(np.matrix([[2, -2], [-4, 3]])))
+    import space as spc
+    s0, xi = chain_flow(2, np.matrix([[1], [-1]]), 0.1, spc.W)
+    print(s0)
+    print(xi)
