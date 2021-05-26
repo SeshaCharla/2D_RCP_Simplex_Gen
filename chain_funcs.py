@@ -4,12 +4,10 @@ from numpy import reshape as rs
 import cvxpy as cvx
 import normals as nr
 import rcp_simgen as simgen
-import lambdas_max as lmax
-import support_vecs as svc
 import space as spc
 
 
-def init_chain(n, asys, F, xi, Lmax, u_max, u_min, phi):
+def init_chain(n, asys, F, xi, del_max, u_max, u_min, phi, ptope_list):
     """ Create initial simplex"""
     eps = 1e-6
     *_, m =  np.shape(asys.B)
@@ -37,11 +35,11 @@ def init_chain(n, asys, F, xi, Lmax, u_max, u_min, phi):
         F_list.append(F_aug[i:i+n, :])
     spx_list= []
     for ui, Fi in zip(u, F_list):
-        spx_list.append(simgen.rcp_simgen(n, asys, Fi, ui.value, xi, Lmax, u_max, u_min, phi))
+        spx_list.append(simgen.rcp_simgen(n, asys, Fi, ui.value, xi, del_max, u_max, u_min, phi, ptope_list))
     c_err = np.array([s.centering_err for s in spx_list])
     return spx_list[np.argmin(c_err)]
 
-def prop_chain(n, asys, old_spx,  xi, Lmax, u_max, u_min, phi):
+def prop_chain(n, asys, old_spx,  xi, del_max, u_max, u_min, phi, ptope_list):
     """ Propagates the simplex chain"""
     F = old_spx.vMat[1:, :]
     uMat_F = old_spx.uMat[1:, :]   # Corresponding inputs
@@ -55,7 +53,7 @@ def prop_chain(n, asys, old_spx,  xi, Lmax, u_max, u_min, phi):
         u0_list.append(rs(uMat_F[i, :], [m,1]))
     spx_list = []
     for ui, Fi in zip(u0_list, F_list):
-        spx_list.append(simgen.rcp_simgen(n, asys, Fi, ui, xi, Lmax, u_max, u_min, phi))
+        spx_list.append(simgen.rcp_simgen(n, asys, Fi, ui, xi, del_max, u_max, u_min, phi, ptope_list))
     c_err = np.array([s.centering_err for s in spx_list])
     return spx_list[np.argmin(c_err)]
 
@@ -72,9 +70,9 @@ if __name__=="__main__":
     import system as ss
 
     F = spc.I
-    Lmax = 1
+    del_max = 1
     u_max = 2*np.ones([2, 1])
     u_min = -2*np.ones([2, 1])
     xi = np.matrix([[0], [-1]])
-    Sim = init_chain(2, ss.lsys, F, xi, Lmax, u_max, u_min, spc.W)
-    Sim2 = prop_chain(2, ss.lsys, Sim, xi, Lmax, u_max, u_min, spc.W)
+    Sim = init_chain(2, ss.lsys, F, xi, del_max, u_max, u_min, spc.W, spc.ptope_list)
+    Sim2 = prop_chain(2, ss.lsys, Sim, xi, del_max, u_max, u_min, spc.W, spc.ptope_list)

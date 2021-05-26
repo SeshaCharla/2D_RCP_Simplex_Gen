@@ -2,7 +2,7 @@ import numpy as np
 from numpy import reshape as rs
 
 
-def lambda_hit(n, v0, alpha0, polytope, out=True):
+def lambda_hit(n, v0, alpha0, polytope):
     """Find the lambda P
     Always use normalized alpha
     Note: Each row of the matrix A, b represent a half space."""
@@ -80,4 +80,4 @@ if __name__=="__main__":
     print(lambda_int(2, v0, a0, spc.W))
     ptope_list = [spc.rgn, spc.vobs, spc.hobs]
     print(lambda_ptope(2, v0, a0, ptope_list))
-    print(lambda_max(2, v0, a0, spc.W, ptope_list))
+    print(lambda_max(2, v0, a0, spc.W, ptope_list, 3))

@@ -56,6 +56,8 @@ vobs = ptope(vobs_vMat)
 hobs = ptope(hobs_vMat)
 rgn  = ptope(rgn_vMat)
 
+ptope_list = [rgn, vobs, hobs]
+
 
 
 

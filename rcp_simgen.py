@@ -4,10 +4,11 @@ from numpy import reshape as rs
 import cvxpy as cvx
 import pypoman as pp
 import normals as nr
+import lambdas_max as lmax
 
 
 
-def rcp_simgen(n, asys, F, u0,  xi, Lmax, u_max, u_min, phi):
+def rcp_simgen(n, asys, F, u0,  xi, del_max, u_max, u_min, phi, ptope_list):
     """Returns an RCP simplex with the proper control inputs (column vector) and velocity vectors"""
     eps = 1e-6
     m =  np.shape(asys.B)[1]
@@ -17,6 +18,9 @@ def rcp_simgen(n, asys, F, u0,  xi, Lmax, u_max, u_min, phi):
         raise(ValueError("Dimensions don't match!"))
     if m!=np.shape(u0)[0]:
         raise(ValueError("Dimensions of u don't match!"))
+
+    # Calculate Lmax
+    Lmax = lmax.lambda_max(n, rs(F[0, :], [n, 1]), alpha0, phi, ptope_list, del_max)
 
     # Finding the outward normals
     v_n = F[0, :] + Lmax*rs(alpha0, [1, n])
@@ -83,8 +87,8 @@ if __name__=="__main__":
     ##############################################################################################
     F = spc.I
     u0 = np.matrix([[1], [0]])
-    Lmax = 3
+    del_max = 1
     u_max = 2*np.ones([2, 1])
     u_min = -2*np.ones([2, 1])
     xi = np.matrix([[0], [-1]])
-    Sim = rcp_simgen(2, sys.lsys, F, u0, xi, Lmax, u_max, u_min, spc.W)
+    Sim = rcp_simgen(2, sys.lsys, F, u0, xi, del_max, u_max, u_min, spc.W, spc.ptope_list)
