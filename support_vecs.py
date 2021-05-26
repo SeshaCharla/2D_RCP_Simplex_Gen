@@ -9,8 +9,9 @@ def which_seg(n, s, phi):
     # sanity checks
     if n != np.shape(s)[0]:
         raise(ValueError("Dimensional Mismatch!!"))
+
     m, _ = np.shape(phi)
-    s = rs(s, [n, 1])
+
     for i in range(m-1):
         s_k = rs(phi[i, :], [n, 1])
         s_kp1 = rs(phi[i+1, :], [n, 1])
@@ -32,7 +33,7 @@ def chain_flow(n, s_in, del_s, phi):
     s_kp1 = rs(phi[k+1, :], [n, 1])
     diff_vec = s_kp1 - s_in
     diff_norm = np.linalg.norm(diff_vec)
-    if (diff_norm <= del_s):
+    if (diff_norm >= del_s):
         xi = diff_vec/diff_norm
         s_o = s_in + del_s * xi
     else:
@@ -44,15 +45,5 @@ def chain_flow(n, s_in, del_s, phi):
             vec = s_o - s_in
             xi = vec/np.linalg.norm(vec)
         else:
-            print("Making del_s/2")
-            del_s = del_s/2
-            chain_flow(n, s_in, del_s, phi)
-            #raise(ValueError("Too big \\delta s"))
+            raise(ValueError("Too big \\delta s"))
     return s_o, xi
-
-
-if __name__=="__main__":
-    import space as spc
-    s0, xi = chain_flow(2, np.matrix([[1], [-1]]), 0.1, spc.W)
-    print(s0)
-    print(xi)
