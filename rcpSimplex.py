@@ -123,9 +123,9 @@ class rcpSimplex():
             for l in range(self.n-1):
                 vecMat[l, :] = fMat[l+1, :] - fMat[0, :]
             h_n = nr.normal(vecMat, self.n)
-            edge = rs(self.vMat[j,:] - fMat[0,:], [self.n, 1])
+            edge = rs(self.vMat[j,:] - fMat[0,:], [self.n, 1]) # drawing normal from the the facet point to the opposite point
             edge_n = edge/np.linalg.norm(edge)
-            if (h_n.T @ edge_n) < 0 :
+            if (h_n.T @ edge_n) > 0 :      # Normal at the point should be opposite to the edge
                 h_n = -h_n
             self.h[i, :] = rs(h_n, [1, self.n])
 
@@ -194,31 +194,3 @@ class rcpSimplex():
     def calc_centering_err(self):
         """Get the quality of simplex"""
         self.centering_err = np.linalg.norm(self.l_int- (1/self.n)*np.ones(self.n))
-
-
-if __name__=="__main__":
-    import system
-    import space as spc
-    # # Showing for 3D case
-    # A = np.eye(3)
-    # B = np.eye(3)
-    # a = np.zeros([3, 1])
-    # lsys = system.asys(A, B, a)
-    # vMat = np.matrix([[0, 0, 0], [1, 0, 0], [0, 1, 0], [0, 0, 1]])
-    # uMat = np.matrix([[1, 1, 1], [2, 1, 1], [3, 1, 1], [1, 1, 1]])
-    # xi = np.matrix([[0], [1], [1]])
-    # u_max = 6*np.ones([3, 1])
-    # u_min = -6*np.ones([3, 1])
-    # W = np.matrix([[0, 0, 0], [1, 1, 1], [2, 2, 2], [3, 3, 3], [4,4,4], [5, 5, 5]])
-    # rsp = rcpSimplex(3, lsys, vMat, uMat, W, xi, u_max, u_min)
-    # print(rsp.in_simplex([0.3, 0.3, 0.3]))
-    # print(rsp.get_u([0.3,0.3, 0.3]))
-
-    # 2D case
-    vMat = np.append(spc.I, np.array([[0.5, -2]]), axis=0)
-    xi = np.matrix([[0], [-1]])
-    uMat = np.zeros([3, 2])
-    uMat[0,:] = np.array([[1, 0]])
-    u_max = 2*np.ones([2, 1])
-    u_min = -2*np.ones([2, 1])
-    rsp = rcpSimplex(2, system.lsys, vMat, uMat, spc.W, xi, u_max, u_min)
