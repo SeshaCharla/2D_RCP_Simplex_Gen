@@ -59,9 +59,6 @@ rgn  = ptope(rgn_vMat)
 ptope_list = [rgn, vobs, hobs]
 
 
-
-
-
 if __name__=="__main__":
     import matplotlib.pyplot as plt
     plt.figure()

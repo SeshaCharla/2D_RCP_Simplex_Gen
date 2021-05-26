@@ -5,10 +5,11 @@ import cvxpy as cvx
 import pypoman as pp
 import normals as nr
 import lambdas_max as lmax
+import support_vecs as svc
 
 
 
-def rcp_simgen(n, asys, F, u0,  xi, del_max, u_max, u_min, phi, ptope_list):
+def rcp_simgen(n, asys, F, u0,  s_in, del_s, u_max, u_min, phi, ptope_list):
     """Returns an RCP simplex with the proper control inputs (column vector) and velocity vectors"""
     eps = 1e-6
     m =  np.shape(asys.B)[1]
@@ -19,6 +20,9 @@ def rcp_simgen(n, asys, F, u0,  xi, del_max, u_max, u_min, phi, ptope_list):
     if m!=np.shape(u0)[0]:
         raise(ValueError("Dimensions of u don't match!"))
 
+    # del_max and support vector
+    s_o, xi = svc.chain_flow(n, s_in, del_s, phi)
+    del_max = np.linalg.norm(s_o-s_in)
     # Calculate Lmax
     Lmax = lmax.lambda_max(n, rs(F[0, :], [n, 1]), alpha0, phi, ptope_list, del_max)
 
@@ -86,9 +90,10 @@ if __name__=="__main__":
     import space as spc
     ##############################################################################################
     F = spc.I
+    s_in = np.matrix([[1], [-1]])
     u0 = np.matrix([[1], [0]])
-    del_max = 1
+    del_s = 1
     u_max = 2*np.ones([2, 1])
     u_min = -2*np.ones([2, 1])
     xi = np.matrix([[0], [-1]])
-    Sim = rcp_simgen(2, sys.lsys, F, u0, xi, del_max, u_max, u_min, spc.W, spc.ptope_list)
+    Sim = rcp_simgen(2, sys.lsys, F, u0,  s_in, del_s, u_max, u_min, spc.W, spc.ptope_list)

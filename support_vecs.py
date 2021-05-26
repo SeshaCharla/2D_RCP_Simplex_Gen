@@ -29,14 +29,14 @@ def chain_flow(n, s_in, del_s, phi):
         raise(ValueError("Dimensional Mismatch!!"))
     m, _ = np.shape(phi)
     k = which_seg(n, s_in, phi)
-    s_kp1 = rs(spc.W[k+1, :], [n, 1])
+    s_kp1 = rs(phi[k+1, :], [n, 1])
     diff_vec = s_kp1 - s_in
     diff_norm = np.linalg.norm(diff_vec)
     if (diff_norm <= del_s):
         xi = diff_vec/diff_norm
         s_o = s_in + del_s * xi
     else:
-        s_kp2 = rs(spc.W[k+2, :], [n, 1])
+        s_kp2 = rs(phi[k+2, :], [n, 1])
         diff_vec_2 = s_kp2 - s_kp1
         diff_norm_2 = np.linalg.norm(diff_vec_2)
         if diff_norm + diff_norm_2 - del_s >=0:

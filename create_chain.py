@@ -10,10 +10,10 @@ import pypoman as pp
 
 
 chain = []
+n = 2
 F = spc.I
-s_in = calc_sin(F)
 del_s = 2.8
-s_o, xi = svc.chain_sup(s_in, del_s)
+s_o, xi = svc.chain_sup(n, s_in, del_s)
 uMat = cf.init_chain(F, xi, ss.lsys)
 
 # Plot
