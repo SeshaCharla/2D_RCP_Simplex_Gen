@@ -23,7 +23,7 @@ def which_seg(n, s, phi):
     raise(ValueError("Not in the segments"))
 
 
-def chain_flow(n, s_in, del_s, phi):
+def chain_flow(n, s_in, phi):
     """ Returns xi and s_o vectors."""
     # sanity checks
     if n != np.shape(s_in)[0]:
@@ -33,17 +33,13 @@ def chain_flow(n, s_in, del_s, phi):
     s_kp1 = rs(phi[k+1, :], [n, 1])
     diff_vec = s_kp1 - s_in
     diff_norm = np.linalg.norm(diff_vec)
-    if (diff_norm >= del_s):
-        xi = diff_vec/diff_norm
-        s_o = s_in + del_s * xi
-    else:
+    if k+1 < m-1:     # The segment is not the last segment
         s_kp2 = rs(phi[k+2, :], [n, 1])
-        diff_vec_2 = s_kp2 - s_kp1
+        diff_vec_2 = s_kp2 - s_in
         diff_norm_2 = np.linalg.norm(diff_vec_2)
-        if diff_norm + diff_norm_2 - del_s >=0:
-            s_o = s_kp1 + (del_s-diff_norm) * (diff_vec_2/diff_norm_2)    # this moves the s_o slowly near the edges.
-            vec = s_o - s_in
-            xi = vec/np.linalg.norm(vec)
-        else:
-            raise(ValueError("Too big \\delta s"))
+        xi = diff_vec_2/diff_norm_2
+        s_o = s_kp2
+    else:
+        xi = diff_vec/diff_norm
+        s_o = s_kp1
     return s_o, xi

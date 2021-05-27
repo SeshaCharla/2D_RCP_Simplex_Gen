@@ -9,13 +9,13 @@ import space as spc
 import support_vecs as svc
 
 
-def init_chain(n, asys, F, s_in, del_s, u_max, u_min, phi, ptope_list):
+def init_chain(n, asys, F, s_in, u_max, u_min, phi, ptope_list):
     """ Create initial simplex"""
     eps = 1e-6
     *_, m =  np.shape(asys.B)
 
     # s_o and xi
-    s_o, xi = svc.chain_flow(n, s_in, del_s, phi)
+    s_o, xi = svc.chain_flow(n, s_in, phi)
 
     # Optimization problem
     u = [cvx.Variable((m, 1)) for i in range(n)]
@@ -42,12 +42,12 @@ def init_chain(n, asys, F, s_in, del_s, u_max, u_min, phi, ptope_list):
     ld_list = []
     for i in range(n):
         alpha_r = asys.A @ rs(F_list[i][0, :], [n, 1]) + asys.B @ u[i].value + asys.a
-        spx, ld = simgen.rcp_simgen(n, asys, F_list[i], u[i].value, alpha_r, s_in, del_s, u_max, u_min, phi, ptope_list)
+        spx, ld = simgen.rcp_simgen(n, asys, F_list[i], u[i].value, alpha_r, s_in, u_max, u_min, phi, ptope_list)
         spx_list.append(spx)
         ld_list.append(ld)
     return spx_list[np.argmax(ld_list)]
 
-def prop_chain(n, asys, old_spx, del_s, u_max, u_min, phi, ptope_list):
+def prop_chain(n, asys, old_spx, u_max, u_min, phi, ptope_list):
     """ Propagates the simplex chain"""
     F = old_spx.vMat[1:, :]
     uMat_F = old_spx.uMat[1:, :]   # Corresponding inputs
@@ -66,7 +66,7 @@ def prop_chain(n, asys, old_spx, del_s, u_max, u_min, phi, ptope_list):
     ld_list = []
     for i in range(n):
         alpha_r = asys.A @ rs(F_list[i][0, :], [n, 1]) + asys.B @ u0_list[i] + asys.a
-        spx, ld = simgen.rcp_simgen(n, asys, F_list[i], u0_list[i], alphar_list[i], old_spx.so, del_s, u_max, u_min, phi, ptope_list)
+        spx, ld = simgen.rcp_simgen(n, asys, F_list[i], u0_list[i], alphar_list[i], old_spx.so, u_max, u_min, phi, ptope_list)
         spx_list.append(spx)
         ld_list.append(ld)
     return spx_list[np.argmax(ld_list)]

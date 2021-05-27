@@ -101,7 +101,7 @@ class rcpSimplex(Simplex):
             self.seg = self.phi[i:i+2, :]
         self.l_int = ld[0:-2, 0]
         d_int = ld[-2:, 0]
-        self.so = (d_int @ self.seg).T
+        self.so = (d_int @ self.seg).T    # intersection of exit facet with the support curvex
         if (d_int[0] <= 0.2) and i < p-2:       # When the point is close to the end point of segment
             xi_vec = (self.phi[i+2, :] - self.phi[i+1, :]).T
         else:

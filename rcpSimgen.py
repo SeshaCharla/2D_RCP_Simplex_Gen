@@ -8,7 +8,7 @@ import lambdas_max as lmax
 import support_vecs as svc
 
 
-def rcp_simgen(n, asys, F, u0, alpha_r, s_in, del_s, u_max, u_min, phi, ptope_list):
+def rcp_simgen(n, asys, F, u0, alpha_r, s_in, u_max, u_min, phi, ptope_list):
     """Returns an RCP simplex with the proper control inputs (column vector) and velocity vectors"""
     eps = 1e-6
     m =  np.shape(asys.B)[1]
@@ -23,7 +23,7 @@ def rcp_simgen(n, asys, F, u0, alpha_r, s_in, del_s, u_max, u_min, phi, ptope_li
         raise(ValueError("Dimensions of u don't match!"))
 
     # del_max and support vector
-    s_o, xi = svc.chain_flow(n, s_in, del_s, phi)
+    s_o, xi = svc.chain_flow(n, s_in, phi)
     del_max = np.linalg.norm(s_o-s_in)
 
     # Calculate Lmax
