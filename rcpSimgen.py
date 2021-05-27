@@ -8,14 +8,15 @@ import lambdas_max as lmax
 import support_vecs as svc
 
 
-
-def rcp_simgen(n, asys, F, u0,  s_in, del_s, u_max, u_min, phi, ptope_list):
+def rcp_simgen(n, asys, F, u0, alpha_r, s_in, del_s, u_max, u_min, phi, ptope_list):
     """Returns an RCP simplex with the proper control inputs (column vector) and velocity vectors"""
     eps = 1e-6
     m =  np.shape(asys.B)[1]
-    alpha0_vec = asys.A @ rs(F[0, :], [n, 1]) + asys.B @ u0 + asys.a
-    alpha0 = alpha0_vec/np.linalg.norm(alpha0_vec)
+    alpha0_vec = asys.A @ rs(F[0, :], [n, 1]) + asys.B @ u0 + asys.a          # not normalized
+    alpha0 = alpha0_vec/np.linalg.norm(alpha0_vec)                            # normalized
     # Sanity Checks
+    if alpha0.T @ alpha_r <= eps:            # alpha0 and alpha_r are not aligned
+        raise(ValueError("The generation vector is not aligned with closed loop vector!"))
     if n != np.shape(F)[0] or n!=np.shape(F)[1]:
         raise(ValueError("Dimensions don't match!"))
     if m!=np.shape(u0)[0]:
@@ -82,4 +83,4 @@ def rcp_simgen(n, asys, F, u0,  s_in, del_s, u_max, u_min, phi, ptope_list):
     vMat = np.append(F, v_n, axis=0)
 
     S = rsp.rcpSimplex(n, asys, vMat, uMat, phi, xi, u_max, u_min)  # (n, asys, vMat, uMat, phi, xi_gen, u_max, u_min)
-    return S
+    return S, l_gen.value

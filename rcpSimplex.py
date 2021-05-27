@@ -72,7 +72,6 @@ class rcpSimplex(Simplex):
         self.optimize_inputs()
         self.calc_affine_feedback()
         self.calc_vertex_flows()
-        self.calc_centering_err()
         self.calc_affine_feedback()
 
     def calc_exit_flow(self):
@@ -191,10 +190,6 @@ class rcpSimplex(Simplex):
         y = rs(x, [self.n, 1])
         u = self.K @ y + self.g
         return u
-
-    def calc_centering_err(self):
-        """Get the quality of simplex"""
-        self.centering_err = np.linalg.norm(self.l_int- (1/self.n)*np.ones(self.n))
 
 
 class terminalSimplex(rcpSimplex):

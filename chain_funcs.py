@@ -1,6 +1,7 @@
 import numpy as np
 from numpy import reshape as rs
 import cvxpy as cvx
+from numpy.lib.shape_base import _apply_along_axis_dispatcher
 import normals as nr
 import rcpSimgen as simgen
 import rcpSimplex as rspx
@@ -38,29 +39,37 @@ def init_chain(n, asys, F, s_in, del_s, u_max, u_min, phi, ptope_list):
     for i in range(n):
         F_list.append(F_aug[i:i+n, :])
     spx_list= []
-    for ui, Fi in zip(u, F_list):
-        spx_list.append(simgen.rcp_simgen(n, asys, Fi, ui.value, s_in, del_s, u_max, u_min, phi, ptope_list))
-    c_err = np.array([s.centering_err for s in spx_list])
-    print(c_err)
-    return spx_list[np.argmax(c_err)]
+    ld_list = []
+    for i in range(n):
+        alpha_r = asys.A @ rs(F_list[i][0, :], [n, 1]) + asys.B @ u[i].value + asys.a
+        spx, ld = simgen.rcp_simgen(n, asys, F_list[i], u[i].value, alpha_r, s_in, del_s, u_max, u_min, phi, ptope_list)
+        spx_list.append(spx)
+        ld_list.append(ld)
+    return spx_list[np.argmax(ld_list)]
 
 def prop_chain(n, asys, old_spx, del_s, u_max, u_min, phi, ptope_list):
     """ Propagates the simplex chain"""
     F = old_spx.vMat[1:, :]
     uMat_F = old_spx.uMat[1:, :]   # Corresponding inputs
+    alphaMat_F = old_spx.alphaMat[1:, :]    # Corresponding closed vf
     _, m = np.shape(asys.B)
     # Possible restricted vertices and corresping exit facets list
     F_list = []
     u0_list = []
+    alphar_list = []
     F_aug = np.append(F, F, axis=0)
     for i in range(n):
         F_list.append(F_aug[i:i+n, :])
         u0_list.append(rs(uMat_F[i, :], [m,1]))
-    spx_list = []
-    for ui, Fi in zip(u0_list, F_list):
-        spx_list.append(simgen.rcp_simgen(n, asys, Fi, ui, old_spx.so, del_s, u_max, u_min, phi, ptope_list))
-    c_err = np.array([s.centering_err for s in spx_list])
-    return spx_list[np.argmin(c_err)]
+        alphar_list.append(rs(alphaMat_F[i, :], [n, 1]))
+    spx_list= []
+    ld_list = []
+    for i in range(n):
+        alpha_r = asys.A @ rs(F_list[i][0, :], [n, 1]) + asys.B @ u0_list[i] + asys.a
+        spx, ld = simgen.rcp_simgen(n, asys, F_list[i], u0_list[i], alphar_list[i], old_spx.so, del_s, u_max, u_min, phi, ptope_list)
+        spx_list.append(spx)
+        ld_list.append(ld)
+    return spx_list[np.argmax(ld_list)]
 
 
 def term_chain(n, asys, old_spx, u_max, u_min, phi):
