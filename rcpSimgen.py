@@ -38,7 +38,7 @@ def rcp_simgen(n, asys, F, u0, alpha_r, s_in, del_s, u_max, u_min, phi, ptope_li
     # Optimization problem
     u = [cvx.Variable((m, 1)) for i in range(1, n+1)]
     l_gen = cvx.Variable()
-    constraints = [l_gen <= Lmax, l_gen >= -Lmax]
+    constraints = [l_gen <= Lmax, l_gen >= eps]
     obj = 0
     for i in range(1, n):
         obj += xi.T @ (asys.A @ rs(F[i, :], [n, 1]) + asys.B @ u[i-1] + asys.a)

@@ -35,7 +35,7 @@ plot2D.plot2D_rcpSpx(chain[-1])
 
 j = 0
 old_spx = Sim2
-while (svc.which_seg(n, s_in, spc.W) != (np.shape(spc.W))[0] -1) and j<5:
+while (svc.which_seg(n, s_in, spc.W) != (np.shape(spc.W))[0] -1) and j<14:
     Sim = cf.prop_chain(n, ss.lsys, old_spx, del_s, u_max,  u_min, spc.W, spc.ptope_list)
     s_in = Sim.so
     chain.append(Sim)
