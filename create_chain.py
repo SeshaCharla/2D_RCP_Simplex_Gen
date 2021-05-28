@@ -27,7 +27,7 @@ pp.plot_polygon(spc.hobs.vertices)
 pp.plot_polygon(spc.rgn.vertices)
 plt.plot(spc.I[:, 0], spc.I[:, 1])
 #plt.plot(spc.E[:, 0], spc.E[:, 1])
-plt.plot(spc.W[:, 0], spc.W[:, 1])
+plt.plot(spc.W[:, 0], spc.W[:, 1], "-x")
 plt.xticks(np.arange(-5, 7))
 plt.yticks(np.arange(-6, 7))
 plt.grid()
@@ -36,7 +36,7 @@ plot2D.plot2D_rcpSpx(chain[1])
 
 j = 0
 old_spx = Sim2
-while (svc.which_seg(n, s_in, spc.W) != (np.shape(spc.W))[0] -1) and j<17:
+while (svc.which_seg(n, s_in, spc.W) != (np.shape(spc.W))[0] -1) and j<20:
     Sim = cf.prop_chain(n, ss.lsys, old_spx, u_max,  u_min, spc.W, spc.ptope_list)
     s_in = Sim.so
     chain.append(Sim)

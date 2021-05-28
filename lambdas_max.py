@@ -50,5 +50,5 @@ def lambda_max(n, v0, alpha0, phi, ptope_list, dels_max):
     dels_max = np.linalg.norm(so-sin)"""
     ld_p = lambda_ptope(n, v0, alpha0, ptope_list)
     ld_int = lambda_int(n, v0, alpha0, phi)
-    ld_max = min([0.75*ld_p, 0.75*ld_int])
+    ld_max = min([0.6*ld_p, 0.6*ld_int])
     return min([ld_max, dels_max])
