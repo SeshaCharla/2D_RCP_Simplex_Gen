@@ -168,12 +168,23 @@ class rcpSimplex(Simplex):
         """Finds the next restricted vertex among the vectors and puts it in F0[0,:]"""
         Fo = self.vMat[1:, :]
         F_aug = np.append(Fo, Fo, axis=0)
-        alpha_o = self.alphaMat[1:, 0]
+        alpha_o = self.alphaMat[1:, :]
         align_vecs = alpha_o @ self.xi
-        j = np.argmax(align_vecs)          # alpha_0 is removed
-        self.F_next = F_aug[j:j+self.n, :] #v0 is removed
-        self.u0_next = rs(self.uMat[j+1, :], [self.m, 1])      # u0 is not removed
-        self.alpha0_next = rs(self.alphaMat[j+1, :], [self.n, 1])
+        # j = np.argmax(align_vecs)          # alpha_0 is removed
+        # self.F_next = F_aug[j:j+self.n, :] #v0 is removed
+        # self.u0_next = rs(self.uMat[j+1, :], [self.m, 1])      # u0 is not removed
+        # self.alpha0_next = rs(self.alphaMat[j+1, :], [self.n, 1])
+        self.F_next_list = []
+        self.u_next_list = []
+        self.alpha_next_list = []
+        vec_max = np.max(align_vecs)
+        for i in range(self.n):
+            if abs((align_vecs[i, 0]-vec_max)/vec_max) <=0.1:
+                self.F_next_list.append(F_aug[i:i+self.n, :])     #v0 is removed
+                self.u_next_list.append(rs(self.uMat[i+1, :], [self.m, 1]))        # u0 is not removed
+                self.alpha_next_list.append(rs(self.alphaMat[i+1,:], [self.n, 1])) # alpha_0 is not removed
+        self.next_list = zip(self.F_next_list, self.u_next_list, self.alpha_next_list)
+
 
     def in_simplex(self, x):
         """x is np array"""

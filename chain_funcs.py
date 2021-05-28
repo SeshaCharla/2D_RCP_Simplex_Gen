@@ -49,9 +49,13 @@ def init_chain(n, asys, F, s_in, u_max, u_min, phi, ptope_list):
 
 def prop_chain(n, asys, old_spx, u_max, u_min, phi, ptope_list):
     """ Propagates the simplex chain"""
-    spx, ld = simgen.rcp_simgen(n, asys, old_spx.F_next, old_spx.u0_next, old_spx.alpha0_next, old_spx.so, u_max, u_min, phi, ptope_list)
-    return spx
-
+    spx_list = []
+    ld_list = []
+    for F_next,u0_next,alpha0_next in old_spx.next_list:
+        spx, ld = simgen.rcp_simgen(n, asys, F_next, u0_next, alpha0_next, old_spx.so, u_max, u_min, phi, ptope_list)
+        spx_list.append(spx)
+        ld_list.append(ld)
+    return spx_list[np.argmax(ld_list)]
 
 def term_chain(n, asys, old_spx, u_max, u_min, phi):
     """Terminate the chain of simplices by creating simplx with equilibrium inside"""
