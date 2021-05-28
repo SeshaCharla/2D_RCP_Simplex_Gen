@@ -60,8 +60,8 @@ def seg_facet(n, F, segs):
             s  = lds[-2:, 0]
             sum_l = np.sum(l)
             sum_s = np.sum(s)
-            l_conds = any(l > 0) and all(l >= 0) and all(l <= 1) and np.round(sum_l, 3) == 1.0
-            s_conds = any(s > 0) and all(s >= 0) and all(s <= 1) and np.round(sum_s, 3) == 1.0
+            l_conds = any(l > 0) and all(l >= 0) and all(l <= 1) and np.round(sum_l, 1) == 1.0
+            s_conds = any(s > 0) and all(s >= 0) and all(s <= 1) and np.round(sum_s, 1) == 1.0
             if l_conds and s_conds:
                 intsct.append((l, i, s))
     return intsct

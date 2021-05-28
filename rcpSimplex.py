@@ -74,6 +74,7 @@ class rcpSimplex(Simplex):
         self.calc_affine_feedback()
         self.calc_vertex_flows()
         self.calc_affine_feedback()
+        self.calc_next_vr()
 
     def calc_exit_flow(self):
         """Calculate the exit facet intersection and the flow vector"""
@@ -87,7 +88,7 @@ class rcpSimplex(Simplex):
             self.l_int = rs(int_tu[0], [1, self.n])
             d_int = rs(int_tu[2], [1, 2])
             self.so = (d_int @ self.seg).T   # intersection of exit facet with the support curvex
-            if (d_int[0, 0] <= 0.2) and k < p-2:       # When the point is close to the end point of segment
+            if (d_int[0, 0] <= 0.25) and k < p-2:       # When the point is close to the end point of segment
                 xi_vec = (self.phi[k+2, :] - self.phi[k+1, :]).T
             else:
                 xi_vec = (self.phi[k+1, :] - self.phi[k, :]).T
@@ -162,6 +163,17 @@ class rcpSimplex(Simplex):
             alpha_i = (self.asys.A @ rs((self.vMat[i,:]), [self.n,1]) + self.asys.B @ rs((self.uMat[i,:]), [self.n,1]) + self.asys.a)
             alpha_n = alpha_i/np.linalg.norm(alpha_i)
             self.alphaMat[i,:] = rs(alpha_n, [1, self.n])
+
+    def calc_next_vr(self):
+        """Finds the next restricted vertex among the vectors and puts it in F0[0,:]"""
+        Fo = self.vMat[1:, :]
+        F_aug = np.append(Fo, Fo, axis=0)
+        alpha_o = self.alphaMat[1:, 0]
+        align_vecs = alpha_o @ self.xi
+        j = np.argmax(align_vecs)          # alpha_0 is removed
+        self.F_next = F_aug[j:j+self.n, :] #v0 is removed
+        self.u0_next = rs(self.uMat[j+1, :], [self.m, 1])      # u0 is not removed
+        self.alpha0_next = rs(self.alphaMat[j+1, :], [self.n, 1])
 
     def in_simplex(self, x):
         """x is np array"""

@@ -49,27 +49,8 @@ def init_chain(n, asys, F, s_in, u_max, u_min, phi, ptope_list):
 
 def prop_chain(n, asys, old_spx, u_max, u_min, phi, ptope_list):
     """ Propagates the simplex chain"""
-    F = old_spx.vMat[1:, :]
-    uMat_F = old_spx.uMat[1:, :]   # Corresponding inputs
-    alphaMat_F = old_spx.alphaMat[1:, :]    # Corresponding closed vf
-    _, m = np.shape(asys.B)
-    # Possible restricted vertices and corresping exit facets list
-    F_list = []
-    u0_list = []
-    alphar_list = []
-    F_aug = np.append(F, F, axis=0)
-    for i in range(n):
-        F_list.append(F_aug[i:i+n, :])
-        u0_list.append(rs(uMat_F[i, :], [m,1]))
-        alphar_list.append(rs(alphaMat_F[i, :], [n, 1]))
-    spx_list= []
-    ld_list = []
-    for i in range(n):
-        alpha_r = asys.A @ rs(F_list[i][0, :], [n, 1]) + asys.B @ u0_list[i] + asys.a
-        spx, ld = simgen.rcp_simgen(n, asys, F_list[i], u0_list[i], alphar_list[i], old_spx.so, u_max, u_min, phi, ptope_list)
-        spx_list.append(spx)
-        ld_list.append(ld)
-    return spx_list[np.argmax(ld_list)]
+    spx, ld = simgen.rcp_simgen(n, asys, old_spx.F_next, old_spx.u0_next, old_spx.alpha0_next, old_spx.so, u_max, u_min, phi, ptope_list)
+    return spx
 
 
 def term_chain(n, asys, old_spx, u_max, u_min, phi):
