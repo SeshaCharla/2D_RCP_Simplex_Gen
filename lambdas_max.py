@@ -1,6 +1,6 @@
 import numpy as np
 from numpy import reshape as rs
-
+import intersection as intsc
 
 def lambda_hit(n, v0, alpha0, polytope):
     """Find the lambda P
@@ -37,28 +37,12 @@ def lambda_ptope(n, v0, alpha0, ptope_list):
 
 def lambda_int(n, v0, alpha0, phi):
     """Intersection with support curve"""
-    #sanity checks
-    if n != np.shape(v0)[0] or n!= np.shape(alpha0)[0]:
-        raise(ValueError("Dimension Mismatch!!"))
-    m, *_ = np.shape(phi)
-    ld = []
-    for i in range(m-1):
-        sk = phi[i,:]
-        skp1 = phi[i+1, :]
-        s_matrix = np.append(sk, skp1, axis=0)
-        lst_col = np.matrix([[0], [1], [1]])
-        f_col = np.append(rs(alpha0, [1, n]), s_matrix, axis=0)
-        A = np.append(f_col, lst_col, axis=1)
-        b = np.append(rs(v0, [1, n]), np.matrix([[1]]), axis=1)
-        try:
-            lds  = np.linalg.solve(A, b)
-            if (0<=lds[1, 0]<=1) and (0<=lds[2, 0]<=1) and (lds[0, 0] >= 0):
-                ld.append(lds[0,0])
-            else:
-                ld.append(np.Inf)
-        except:
-            ld.append(np.Inf)
-    return min(ld)
+    int_lst = intsc.seg_ray(n, v0, alpha0, phi)
+    if int_lst:
+        ld = [int_tu[0] for int_tu in int_lst]
+        return min(ld)
+    else:
+        return np.Inf
 
 
 def lambda_max(n, v0, alpha0, phi, ptope_list, dels_max):
@@ -66,5 +50,5 @@ def lambda_max(n, v0, alpha0, phi, ptope_list, dels_max):
     dels_max = np.linalg.norm(so-sin)"""
     ld_p = lambda_ptope(n, v0, alpha0, ptope_list)
     ld_int = lambda_int(n, v0, alpha0, phi)
-    ld_max = min([0.75*ld_p, 0.5*ld_int])
+    ld_max = min([0.3*ld_p, 0.5*ld_int])
     return min([ld_max, 2*dels_max])

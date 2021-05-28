@@ -18,7 +18,7 @@ def which_seg(n, s, phi):
         c = s - s_k
         c1 = s_kp1 - s_k
         M = np.column_stack([c1, c])
-        if np.linalg.matrix_rank(M) < n:
+        if np.linalg.matrix_rank(M, tol=1e-2) < n:
             return i
     raise(ValueError("Not in the segments"))
 

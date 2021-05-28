@@ -16,8 +16,8 @@ s_in = np.matrix([[1], [-1]])
 del_s = 1
 u_max = 6*np.ones([2, 1])
 u_min = -6*np.ones([2, 1])
-Sim = cf.init_chain(2, ss.lsys, F, s_in, del_s, u_max, u_min, spc.W, spc.ptope_list)
-Sim2 = cf.prop_chain(2, ss.lsys, Sim, del_s, u_max, u_min, spc.W, spc.ptope_list)
+Sim = cf.init_chain(2, ss.lsys, F, s_in,  u_max, u_min, spc.W, spc.ptope_list)
+Sim2 = cf.prop_chain(2, ss.lsys, Sim, u_max, u_min, spc.W, spc.ptope_list)
 chain.append(Sim)
 chain.append(Sim2)
 # Plot
@@ -31,12 +31,13 @@ plt.plot(spc.W[:, 0], spc.W[:, 1])
 plt.xticks(np.arange(-5, 7))
 plt.yticks(np.arange(-6, 7))
 plt.grid()
-plot2D.plot2D_rcpSpx(chain[-1])
+plot2D.plot2D_rcpSpx(chain[0])
+plot2D.plot2D_rcpSpx(chain[1])
 
 j = 0
 old_spx = Sim2
-while (svc.which_seg(n, s_in, spc.W) != (np.shape(spc.W))[0] -1) and j<14:
-    Sim = cf.prop_chain(n, ss.lsys, old_spx, del_s, u_max,  u_min, spc.W, spc.ptope_list)
+while (svc.which_seg(n, s_in, spc.W) != (np.shape(spc.W))[0] -1) and j<25:
+    Sim = cf.prop_chain(n, ss.lsys, old_spx, u_max,  u_min, spc.W, spc.ptope_list)
     s_in = Sim.so
     chain.append(Sim)
     plot2D.plot2D_rcpSpx(Sim)

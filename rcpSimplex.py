@@ -3,6 +3,7 @@ import pypoman as pp
 from numpy import reshape as rs
 import cvxpy as cvx
 import normals as nr
+import intersection as intsc
 
 
 
@@ -76,37 +77,23 @@ class rcpSimplex(Simplex):
 
     def calc_exit_flow(self):
         """Calculate the exit facet intersection and the flow vector"""
-        Fo = self.vMat[1:, :]    # Matrix containing the exit facet vertices
-        p, *_ = np.shape(self.phi)  # Total number of segments
-        ld = np.nan * np.ones([self.n+2, 1])   # \lambda1, ...\lambdan, -\delta1, -\delta2,...
-        for i in range(p-1):
-            # Constructing A and b matrices
-            M_vert = np.append(Fo, -1*self.phi[i:i+2,:], axis=0)
-            l_sum = np.append(np.ones([self.n, 1]), np.zeros([2, 1]), axis = 0)
-            d_sum = np.append(np.zeros([self.n, 1]), np.ones([2, 1]), axis = 0)
-            M = np.append(M_vert, np.append(l_sum, d_sum, axis = 1), axis=1)
-            A = M.T
-            b = np.zeros([np.shape(A)[0], 1])
-            b[-1, 0] = 1
-            b[-2, 0] = 1
-            try:
-                ld = np.linalg.solve(A, b)
-            except np.linalg.LinAlgError:
-                continue
-            if all(ld) >= 0:
-                break
-        if any(np.isnan(ld)):
-            raise(ValueError("The Facet seems not to intersect the support curve!"))
+        Fo = self.vMat[1:, :]    # Matrix containing the exit facet
+        p, _ = np.shape(self.phi)
+        int_lst = intsc.seg_facet(self.n, Fo, self.phi)
+        if int_lst:
+            int_tu = int_lst[0]
+            k = int_tu[1]
+            self.seg = self.phi[k:k+2, :]
+            self.l_int = rs(int_tu[0], [1, self.n])
+            d_int = rs(int_tu[2], [1, 2])
+            self.so = (d_int @ self.seg).T   # intersection of exit facet with the support curvex
+            if (d_int[0, 0] <= 0.2) and k < p-2:       # When the point is close to the end point of segment
+                xi_vec = (self.phi[k+2, :] - self.phi[k+1, :]).T
+            else:
+                xi_vec = (self.phi[k+1, :] - self.phi[k, :]).T
+            self.xi = xi_vec / (np.linalg.norm(xi_vec))
         else:
-            self.seg = self.phi[i:i+2, :]
-        self.l_int = ld[0:-2, 0]
-        d_int = ld[-2:, 0]
-        self.so = (d_int @ self.seg).T    # intersection of exit facet with the support curvex
-        if (d_int[0] <= 0.2) and i < p-2:       # When the point is close to the end point of segment
-            xi_vec = (self.phi[i+2, :] - self.phi[i+1, :]).T
-        else:
-            xi_vec = (self.phi[i+1, :] - self.phi[i, :]).T
-        self.xi = xi_vec / (np.linalg.norm(xi_vec))
+            raise(ValueError("The facet is not intersecting the curve!!"))
 
     # def calc_ourward_normals(self):
     #     """ Calculates the matrix of outward normals of all the facets"""
