@@ -29,7 +29,7 @@ def seg_ray(n, v, vec, segs):
             s = lds[0:2, 0]
             l  = lds[-1, 0]
             sum_s = np.sum(s)
-            if any(s > 0) and all(s >= 0) and all(s <= 1) and sum_s==1 and l>0 :
+            if any(s > 0) and all(s >= 0) and all(s <= 1) and np.round(sum_s, 2) == 1.0 and l>0 :
                 intsct.append((l, i, s))
     return intsct
 

@@ -4,6 +4,7 @@ from numpy import reshape as rs
 import cvxpy as cvx
 import normals as nr
 import intersection as intsc
+import support_vecs as svc
 
 
 
@@ -88,11 +89,7 @@ class rcpSimplex(Simplex):
             self.l_int = rs(int_tu[0], [1, self.n])
             d_int = rs(int_tu[2], [1, 2])
             self.so = (d_int @ self.seg).T   # intersection of exit facet with the support curvex
-            if (d_int[0, 0] <= 0.25) and k < p-2:       # When the point is close to the end point of segment
-                xi_vec = (self.phi[k+2, :] - self.phi[k+1, :]).T
-            else:
-                xi_vec = (self.phi[k+1, :] - self.phi[k, :]).T
-            self.xi = xi_vec / (np.linalg.norm(xi_vec))
+            sn, self.xi = svc.chain_flow(self.n, self.so, self.phi)
         else:
             raise(ValueError("The facet is not intersecting the curve!!"))
 

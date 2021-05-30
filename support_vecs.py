@@ -30,15 +30,18 @@ def chain_flow(n, s_in, phi):
         raise(ValueError("Dimensional Mismatch!!"))
     m, _ = np.shape(phi)
     k = which_seg(n, s_in, phi)
+    s_k = rs(phi[k, :], [n, 1])
     s_kp1 = rs(phi[k+1, :], [n, 1])
+    seg_length= np.linalg.norm((s_kp1-s_k))
     diff_vec = s_kp1 - s_in
     diff_norm = np.linalg.norm(diff_vec)
-    if k+1 < m-1:     # The segment is not the last segment
+    if (k+1 < m-1) and ((diff_norm/seg_length) <= 0.25):     # The segment is not the last segment
         s_kp2 = rs(phi[k+2, :], [n, 1])
-        diff_vec_2 = s_kp2 - s_in
+        s_c = 0.5*(s_kp1) + 0.5*(s_kp2)
+        diff_vec_2 = s_c - s_in
         diff_norm_2 = np.linalg.norm(diff_vec_2)
         xi = diff_vec_2/diff_norm_2
-        s_o = s_kp2
+        s_o = s_c
     else:
         xi = diff_vec/diff_norm
         s_o = s_kp1
