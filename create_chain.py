@@ -36,7 +36,7 @@ plot2D.plot2D_rcpSpx(chain[1])
 
 j = 0
 old_spx = Sim2
-while (svc.which_seg(n, s_in, spc.W) != (np.shape(spc.W))[0] -2) and j<60:
+while (svc.which_seg(n, s_in, spc.W) != (np.shape(spc.W))[0] -2):
     Sim = cf.prop_chain(n, ss.lsys, old_spx, u_max,  u_min, spc.W, spc.ptope_list)
     s_in = Sim.so
     chain.append(Sim)
@@ -45,4 +45,7 @@ while (svc.which_seg(n, s_in, spc.W) != (np.shape(spc.W))[0] -2) and j<60:
     j = j + 1
     print(j)
 
+term_sim = cf.term_chain(2, ss.lsys, chain[-1], u_max, u_min, spc.W)
+chain.append(term_sim)
+plot2D.plot2D_term_spx(term_sim)
 plt.show()
