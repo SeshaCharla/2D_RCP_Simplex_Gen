@@ -16,10 +16,17 @@ def which_seg(n, s, phi):
         s_k = rs(phi[i, :], [n, 1])
         s_kp1 = rs(phi[i+1, :], [n, 1])
         c = s - s_k
-        c1 = s_kp1 - s_k
-        M = np.column_stack([c1, c])
-        if np.linalg.matrix_rank(M, tol=1e-2) < n:
-            return i
+        c_ = s_kp1 - s
+        ck = s_kp1 - s_k
+        if np.all(ck == 0):
+            raise(ValueError("The segment is a point!!"))
+        M = np.column_stack([ck, c])
+        if np.linalg.matrix_rank(M, 1e-6) == 1:   # This implies that the
+            mag_c = np.linalg.norm(c)
+            mag_c_ = np.linalg.norm(c_)
+            mag_ck = np.linalg.norm(ck)
+            if mag_c <= mag_ck and mag_c_ <= mag_ck:
+                return i
     raise(ValueError("Not in the segments"))
 
 

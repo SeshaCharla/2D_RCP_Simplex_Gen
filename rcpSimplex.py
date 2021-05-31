@@ -76,6 +76,7 @@ class rcpSimplex(Simplex):
         self.calc_vertex_flows()
         self.calc_affine_feedback()
         self.calc_next_vr()
+        self.calc_centering_err()
 
     def calc_exit_flow(self):
         """Calculate the exit facet intersection and the flow vector"""
@@ -197,6 +198,10 @@ class rcpSimplex(Simplex):
         y = rs(x, [self.n, 1])
         u = self.K @ y + self.g
         return u
+
+    def calc_centering_err(self):
+        """Centering error"""
+        self.c_err = np.linalg.norm(self.l_int - (1/self.n) * np.ones(np.shape(self.l_int)))
 
 
 class terminalSimplex(rcpSimplex):
