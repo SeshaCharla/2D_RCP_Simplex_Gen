@@ -76,4 +76,3 @@ if __name__=="__main__":
     plt.yticks(np.arange(-6, 7))
     plt.grid()
     plt.show()
-    print(which_seg([1.125, -1.5]))
