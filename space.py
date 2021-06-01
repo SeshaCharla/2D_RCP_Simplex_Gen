@@ -12,8 +12,6 @@ class ptope():
         self.A, self.b = pp.duality.compute_polytope_halfspaces(self.vertices)
 
 
-
-
 """General way of representing vertex sets using matrices: rows -- vertics"""
 
 vobs_vMat = np.matrix([[0, 1],
