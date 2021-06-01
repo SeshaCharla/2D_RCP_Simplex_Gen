@@ -188,7 +188,7 @@ class rcpSimplex(Simplex):
         """x is np array"""
         y = rs(x, [self.n, 1])
         z = (self.A @ y).T - self.b
-        if np.all(z <= 0):
+        if np.all(z <= 1e-6):
             return True
         else:
             return False
@@ -220,6 +220,8 @@ class terminalSimplex(rcpSimplex):
         self.optimize_inputs()
         self.calc_affine_feedback()
         self.calc_vertex_flows()
+        # Half Space Represintation
+        self.A, self.b = pp.duality.compute_polytope_halfspaces(np.array(self.vMat))
 
     def optimize_inputs(self):
         """Terminate Simplex by solving the all invariance conditions based RCP"""

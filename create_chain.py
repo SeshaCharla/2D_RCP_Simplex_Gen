@@ -17,35 +17,32 @@ del_s = 1
 u_max = 6*np.ones([2, 1])
 u_min = -6*np.ones([2, 1])
 Sim = cf.init_chain(2, ss.lsys, F, s_in,  u_max, u_min, spc.W, spc.ptope_list)
-Sim2 = cf.prop_chain(2, ss.lsys, Sim, u_max, u_min, spc.W, spc.ptope_list)
 chain.append(Sim)
-chain.append(Sim2)
-# Plot
-plt.figure()
-pp.plot_polygon(spc.vobs.vertices)
-pp.plot_polygon(spc.hobs.vertices)
-pp.plot_polygon(spc.rgn.vertices)
-plt.plot(spc.I[:, 0], spc.I[:, 1])
-#plt.plot(spc.E[:, 0], spc.E[:, 1])
-plt.plot(spc.W[:, 0], spc.W[:, 1], "-x")
-plt.xticks(np.arange(-5, 7))
-plt.yticks(np.arange(-6, 7))
-plt.grid()
-plot2D.plot2D_rcpSpx(chain[0])
-plot2D.plot2D_rcpSpx(chain[1])
-
 j = 0
-old_spx = Sim2
+old_spx = Sim
 while (svc.which_seg(n, s_in, spc.W) != (np.shape(spc.W))[0] -2):
     Sim = cf.prop_chain(n, ss.lsys, old_spx, u_max,  u_min, spc.W, spc.ptope_list)
     s_in = Sim.so
     chain.append(Sim)
-    plot2D.plot2D_rcpSpx(Sim)
     old_spx = Sim
     j = j + 1
-    print(j)
-
 term_sim = cf.term_chain(2, ss.lsys, chain[-1], u_max, u_min, spc.W)
 chain.append(term_sim)
-plot2D.plot2D_term_spx(term_sim)
-plt.show()
+
+if __name__=="__main__":
+
+    # Plot
+    plt.figure()
+    plt.grid()
+    pp.plot_polygon(spc.vobs.vertices)
+    pp.plot_polygon(spc.hobs.vertices)
+    pp.plot_polygon(spc.rgn.vertices)
+    plt.plot(spc.I[:, 0], spc.I[:, 1])
+    plt.plot(spc.E[:, 0], spc.E[:, 1])
+    plt.plot(spc.W[:, 0], spc.W[:, 1])
+    plt.xticks(np.arange(-5, 7))
+    plt.yticks(np.arange(-6, 7))
+    for sim in chain[0:-1]:
+        plot2D.plot2D_rcpSpx(sim)
+    plot2D.plot2D_term_spx(chain[-1])
+    plt.show()

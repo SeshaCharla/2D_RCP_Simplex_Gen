@@ -27,7 +27,6 @@ def plot2D_rcpSpx(spx):
     pp.plot_polygon(spx.vertices)
     plot2D_flow(spx)
     plot2D_normals(spx)
-    plt.grid()
     _ = plt.axis("equal")
 
 def plot2D_terminal_flow(spx):
@@ -42,5 +41,9 @@ def plot2D_term_spx(spx):
     pp.plot_polygon(spx.vertices)
     plot2D_terminal_flow(spx)
     plot2D_normals(spx)
-    plt.grid()
+    _ = plt.axis("equal")
+
+def plot2d_spx(spx):
+    """plots only the simplex"""
+    pp.plot_polygon(spx.vertices)
     _ = plt.axis("equal")
