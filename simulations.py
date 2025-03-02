@@ -38,7 +38,6 @@ if __name__=="__main__":
     x = [simulate(tf, xo) for xo in x0]
 
     plt.figure()
-    plt.figure()
     pp.plot_polygon(spc.vobs.vertices)
     pp.plot_polygon(spc.hobs.vertices)
     pp.plot_polygon(spc.rgn.vertices)
