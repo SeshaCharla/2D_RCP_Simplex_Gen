@@ -19,7 +19,7 @@ lsys = asys(A, B, a)
 def f(t, x, u):
     """ The system"""
     xv = np.matrix([[x[0]], [x[1]]])
-    xd = lsys.A @ xv + lsys.B*u + lsys.a
+    xd = lsys.A @ xv + lsys.B @ u + lsys.a
     return np.array([xd[0, 0], xd[1, 0]])
 
 
