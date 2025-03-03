@@ -14,8 +14,8 @@ n = 2
 F = spc.I
 s_in = np.matrix([[1], [-1]])
 del_s = 1
-u_max = 6*np.ones([2, 1])
-u_min = -6*np.ones([2, 1])
+u_max = 4*np.ones([2, 1])
+u_min = -4*np.ones([2, 1])
 Sim = cf.init_chain(2, ss.lsys, F, s_in,  u_max, u_min, spc.W, spc.ptope_list)
 chain.append(Sim)
 j = 0

@@ -76,7 +76,7 @@ def rcp_simgen(n, asys, F, u0, alpha_r, s_in, u_max, u_min, phi, ptope_list):
     uMat = np.zeros([n+1, m])
     uMat[0, :] = rs(u0, [1, m])
     for i in range(1, n+1):
-        uMat[i, :] = rs(u[i-1].value, [1, m])
+        uMat[i, :] = rs((u[i-1].value).flatten(), [1, m])
 
     # v Matrix
     v_n = F[0, :] + l_gen.value*rs(alpha0, [1, n])
