@@ -1,4 +1,4 @@
-from scipy.integrate.odepack import odeint
+from scipy.integrate import odeint
 from create_chain import chain
 from numpy import reshape as rs
 import numpy as np
